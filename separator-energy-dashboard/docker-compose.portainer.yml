@@ -1,0 +1,70 @@
+# =============================================================================
+# docker-compose.portainer.yml — Use pre-loaded images (no build)
+# Driftwood Dairy | Texas Automation Systems
+#
+# Use this in Portainer after loading separator-dashboard-images.tar:
+#   docker load -i separator-dashboard-images.tar
+#
+# In Portainer: create Stack → paste this file → add env vars or .env.
+# Ensure the "industry40" network exists on the server.
+# =============================================================================
+
+services:
+  separator-backend:
+    image: separator-backend:latest
+    container_name: separator-backend
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+    environment:
+      - TIMEBASE_HOST=${TIMEBASE_HOST:-timebase-historian}
+      - TIMEBASE_PORT=${TIMEBASE_PORT:-4511}
+      - TIMEBASE_DATASET=${TIMEBASE_DATASET:-Driftwood Historian}
+      - FACILITY_TIMEZONE=${FACILITY_TIMEZONE:-US/Pacific}
+      - DEFAULT_RATE_PER_KWH=${DEFAULT_RATE_PER_KWH:-0.30}
+      - VOLTAGE=${VOLTAGE:-460}
+      - POWER_FACTOR=${POWER_FACTOR:-0.88}
+      - LOOKBACK_DAYS=${LOOKBACK_DAYS:-7}
+      - MIN_GOOD_QUALITY=${MIN_GOOD_QUALITY:-192}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000,http://localhost:5173}
+      - TOU_SUMMER_ON_PEAK=${TOU_SUMMER_ON_PEAK:-0.38}
+      - TOU_SUMMER_MID_PEAK=${TOU_SUMMER_MID_PEAK:-0.28}
+      - TOU_SUMMER_OFF_PEAK=${TOU_SUMMER_OFF_PEAK:-0.18}
+      - TOU_WINTER_MID_PEAK=${TOU_WINTER_MID_PEAK:-0.30}
+      - TOU_WINTER_OFF_PEAK=${TOU_WINTER_OFF_PEAK:-0.22}
+      - TOU_WINTER_SUPER_OFF_PEAK=${TOU_WINTER_SUPER_OFF_PEAK:-0.16}
+      - TZ=${TZ:-America/Los_Angeles}
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - industry40
+
+  separator-frontend:
+    image: separator-frontend:latest
+    container_name: separator-frontend
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+    ports:
+      - "${DASHBOARD_PORT:-3000}:80"
+    depends_on:
+      separator-backend:
+        condition: service_healthy
+    networks:
+      - industry40
+
+networks:
+  industry40:
+    external: true

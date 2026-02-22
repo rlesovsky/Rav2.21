@@ -1,85 +1,49 @@
 # =============================================================================
-# docker-compose.yml — Separator Energy Cost Dashboard
+# docker-compose.yml — Separator Energy Cost Dashboard (POC)
 # Driftwood Dairy | El Monte, CA | Texas Automation Systems
 #
-# Usage:
-#   docker compose up -d --build
+# Single container — FastAPI serves both the API and React frontend.
+# Uses host networking so it can reach TimeBase at 192.254.155.2.
 #
-# Portainer:
-#   Copy this file into a Portainer Stack. Set environment variables
-#   in the Portainer UI or provide a .env file.
+# Import separator-dashboard-v2.21.tar in Portainer Images, then
+# deploy this as a Portainer Stack.
 #
-# Access the dashboard at http://<host>:3000
-#
-# Port check against production stack (no conflicts):
-#   3000 — Dashboard (free; Grafana uses 3002, Uptime Kuma uses 3001)
-#   8000 — Backend (internal only, not exposed to host)
+# Dashboard: http://<host>:3030
 # =============================================================================
 
 version: '3.8'
 
 services:
-  # --- Backend: FastAPI + Python 3.11 ----------------------------------------
-  separator-backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: separator-backend
+  separator-dashboard:
+    image: separator-dashboard:v2.21
+    container_name: separator-dashboard
     restart: unless-stopped
+    network_mode: host
     logging:
       driver: "json-file"
       options:
         max-size: "50m"
         max-file: "5"
     environment:
-      - TIMEBASE_HOST=${TIMEBASE_HOST:-timebase-historian}
-      - TIMEBASE_PORT=${TIMEBASE_PORT:-4511}
-      - TIMEBASE_DATASET=${TIMEBASE_DATASET:-Driftwood Historian}
-      - FACILITY_TIMEZONE=${FACILITY_TIMEZONE:-US/Pacific}
-      - DEFAULT_RATE_PER_KWH=${DEFAULT_RATE_PER_KWH:-0.30}
-      - VOLTAGE=${VOLTAGE:-460}
-      - POWER_FACTOR=${POWER_FACTOR:-0.88}
-      - LOOKBACK_DAYS=${LOOKBACK_DAYS:-7}
-      - MIN_GOOD_QUALITY=${MIN_GOOD_QUALITY:-192}
-      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000,http://localhost:5173}
-      - TOU_SUMMER_ON_PEAK=${TOU_SUMMER_ON_PEAK:-0.38}
-      - TOU_SUMMER_MID_PEAK=${TOU_SUMMER_MID_PEAK:-0.28}
-      - TOU_SUMMER_OFF_PEAK=${TOU_SUMMER_OFF_PEAK:-0.18}
-      - TOU_WINTER_MID_PEAK=${TOU_WINTER_MID_PEAK:-0.30}
-      - TOU_WINTER_OFF_PEAK=${TOU_WINTER_OFF_PEAK:-0.22}
-      - TOU_WINTER_SUPER_OFF_PEAK=${TOU_WINTER_SUPER_OFF_PEAK:-0.16}
-      - TZ=${TZ:-America/Los_Angeles}
-    expose:
-      - "8000"
+      - TIMEBASE_HOST=192.254.155.2
+      - TIMEBASE_PORT=4511
+      - TIMEBASE_DATASET=Driftwood Historian
+      - FACILITY_TIMEZONE=US/Pacific
+      - DEFAULT_RATE_PER_KWH=0.30
+      - VOLTAGE=460
+      - POWER_FACTOR=0.88
+      - LOOKBACK_DAYS=7
+      - MIN_GOOD_QUALITY=192
+      - TOU_SUMMER_ON_PEAK=0.38
+      - TOU_SUMMER_MID_PEAK=0.28
+      - TOU_SUMMER_OFF_PEAK=0.18
+      - TOU_WINTER_MID_PEAK=0.30
+      - TOU_WINTER_OFF_PEAK=0.22
+      - TOU_WINTER_SUPER_OFF_PEAK=0.16
+      - TZ=America/Los_Angeles
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:3030/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 15s
-    networks:
-      - industry40
-
-  # --- Frontend: React (Vite build) + Nginx ----------------------------------
-  separator-frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: separator-frontend
-    restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-        max-file: "5"
-    ports:
-      - "${DASHBOARD_PORT:-3000}:80"
-    depends_on:
-      separator-backend:
-        condition: service_healthy
-    networks:
-      - industry40
-
-networks:
-  industry40:
-    external: true

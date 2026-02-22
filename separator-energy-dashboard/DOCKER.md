@@ -6,6 +6,65 @@ This document describes how to run the dashboard with Docker and Docker Compose.
 
 ---
 
+## Export images to .tar (for Portainer on a server without build)
+
+If you want to build once (e.g. on your laptop) and deploy on a server that doesn’t have the source code (e.g. via Portainer), you can export the images to a single `.tar` file and load it on the server.
+
+### Option 1: Get the tar from GitHub Actions (no local Docker)
+
+1. Push your code to GitHub (branch `main`).
+2. In the repo go to **Actions** → workflow **"Build dashboard images"**.
+3. Click **Run workflow** to start a build (or it runs automatically on push when `separator-energy-dashboard/` changes).
+4. When the run finishes, open that run and scroll to **Artifacts**.
+5. Download **separator-dashboard-images** (GitHub may give you a .zip; unzip it to get `separator-dashboard-images.tar`).
+6. Copy the `.tar` to your production server, then load and deploy (see "Load and run on the server" below).
+
+### Option 2: Build and save locally (machine with Docker and the repo)
+
+```bash
+cd separator-energy-dashboard
+chmod +x export-images.sh
+./export-images.sh
+```
+
+This script runs `docker compose build`, tags the images, and saves them to **~/Downloads/separator-dashboard-images.tar**. Copy that tar to the server (e.g. `scp`).
+
+### Load and run on the server (Portainer or CLI)
+
+**Option A — Portainer**
+
+1. On the server, load the images (once) in a shell or via Portainer “Images” → “Import” if it supports tar:
+   ```bash
+   docker load -i /tmp/separator-dashboard-images.tar
+   ```
+2. Ensure the **industry40** network exists:
+   ```bash
+   docker network create industry40
+   ```
+3. In Portainer: **Stacks** → **Add stack**.
+4. Paste the contents of **docker-compose.portainer.yml** (from this repo). It uses `image: separator-backend:latest` and `image: separator-frontend:latest` (no `build`).
+5. Set environment variables in the stack (or use “Load from .env”) — at least **TIMEBASE_HOST** if the historian isn’t on the same Docker network.
+6. Deploy. The dashboard will be at http://&lt;server&gt;:3000 (or your **DASHBOARD_PORT**).
+
+**Option B — CLI on the server**
+
+```bash
+docker load -i /tmp/separator-dashboard-images.tar
+docker network create industry40  # if not exists
+cd /path/to/repo/separator-energy-dashboard
+# Use the Portainer compose (uses pre-loaded images)
+docker compose -f docker-compose.portainer.yml up -d
+```
+
+### Files used for this workflow
+
+| File | Purpose |
+|------|---------|
+| **export-images.sh** | Builds images, tags them, saves to `separator-dashboard-images.tar` |
+| **docker-compose.portainer.yml** | Compose file that uses pre-loaded images (no `build`); use this in Portainer after loading the tar |
+
+---
+
 ## Prerequisites
 
 - **Docker** and **Docker Compose** (v2+)

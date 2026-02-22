@@ -1,0 +1,46 @@
+# Build Separator Dashboard Docker images and export as .tar for Portainer
+# Manual run: Actions → Build dashboard images → Run workflow
+# Artifact: separator-dashboard-images.tar (download and use on production server)
+
+name: Build dashboard images
+
+on:
+  workflow_dispatch:  # Manual trigger only
+  push:
+    branches: [main]
+    paths:
+      - 'separator-energy-dashboard/**'
+
+jobs:
+  build-and-export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build images
+        run: |
+          cd separator-energy-dashboard
+          docker compose build
+
+      - name: Tag images
+        run: |
+          cd separator-energy-dashboard
+          PROJECT_NAME="separator-energy-dashboard"
+          docker tag ${PROJECT_NAME}-separator-backend:latest separator-backend:latest
+          docker tag ${PROJECT_NAME}-separator-frontend:latest separator-frontend:latest
+
+      - name: Export to tar
+        run: |
+          cd separator-energy-dashboard
+          docker save -o separator-dashboard-images.tar separator-backend:latest separator-frontend:latest
+          ls -lh separator-dashboard-images.tar
+
+      - name: Upload tar artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: separator-dashboard-images
+          path: separator-energy-dashboard/separator-dashboard-images.tar
