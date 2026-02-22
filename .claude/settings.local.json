@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc:*)",
+      "Bash(./venv/bin/python:*)",
+      "Bash(npx vite build)",
+      "Bash(curl:*)",
+      "Bash(python3:*)",
+      "Bash(docker compose build:*)"
+    ]
+  }
+}

@@ -1,0 +1,24 @@
+# Python
+venv/
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+.env
+.env.local
+*.egg-info/
+.eggs/
+
+# Node / frontend
+node_modules/
+dist/
+*.local
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+*.log
+
+# Cursor
+.cursor/
