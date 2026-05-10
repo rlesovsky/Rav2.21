@@ -14,8 +14,6 @@ from datetime import datetime
 
 import pandas as pd
 
-from config import TAGS
-
 logger = logging.getLogger(__name__)
 
 # State constants

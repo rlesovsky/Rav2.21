@@ -1,5 +1,6 @@
 # Python
 venv/
+.venv/
 __pycache__/
 *.py[cod]
 *.pyo
@@ -8,6 +9,7 @@ __pycache__/
 .env.local
 *.egg-info/
 .eggs/
+.pytest_cache/
 
 # Node / frontend
 node_modules/

@@ -9,17 +9,20 @@
 
 import logging
 import os
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 load_dotenv()
 
+from config import I3X_BASE_URL, USE_I3X
 from routers.energy import router as energy_router
+from services import historian_client, processing
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -38,6 +41,38 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 STATIC_DIR = Path(__file__).parent / "static"
 
+
+# ---------------------------------------------------------------------------
+# Lifespan — historian client and processing loop
+#
+# Order on startup:   historian_client.startup() -> processing.start()
+# Order on shutdown:  processing.stop()          -> historian_client.shutdown()
+#
+# Reverse order on shutdown ensures the processing loop has stopped before
+# we close the httpx client it depends on; otherwise a tick mid-shutdown
+# would log spurious connection errors.
+# ---------------------------------------------------------------------------
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info(
+        "Starting Separator Energy Dashboard (USE_I3X=%s, i3x_base_url=%s)",
+        USE_I3X,
+        I3X_BASE_URL if USE_I3X else "n/a",
+    )
+    try:
+        await historian_client.startup()
+    except Exception as exc:
+        logger.error("Historian client startup failed: %s", exc)
+        raise
+    await processing.start()
+
+    yield
+
+    logger.info("Shutting down — stopping processing loop, closing historian client")
+    await processing.stop()
+    await historian_client.shutdown()
+
+
 # ---------------------------------------------------------------------------
 # App
 # ---------------------------------------------------------------------------
@@ -45,6 +80,7 @@ app = FastAPI(
     title="Separator Energy Cost Dashboard",
     description="Driftwood Dairy — El Monte, CA  |  Texas Automation Systems",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 # CORS — only needed for local dev (Vite on :5173 → API on :8000)
@@ -70,8 +106,34 @@ app.include_router(energy_router)
 
 @app.get("/health")
 async def health():
-    """Simple health check."""
     return {"status": "ok", "service": "separator-energy-dashboard"}
+
+
+@app.get("/api/i3x/info")
+async def i3x_info():
+    """Diagnostic — local config + on-demand probe of upstream /i3x/info.
+
+    Returns 404 when USE_I3X=false. Otherwise always 200; the upstream probe
+    is reported in `upstreamInfoStatus` so ops can distinguish:
+        200 -> upstream healthy and exposes /info
+        404 -> upstream healthy but does not expose /info (Timebase default)
+        0   -> upstream unreachable (network error)
+    """
+    if not USE_I3X:
+        raise HTTPException(status_code=404, detail="i3X mode is disabled (USE_I3X=false)")
+
+    from config import I3X_DATASET, I3X_TAGS
+    from services.i3x_client import get_info  # lazy import — legacy path skips
+
+    info, status = await get_info()
+    return {
+        "backend": "i3x",
+        "baseUrl": I3X_BASE_URL,
+        "dataset": I3X_DATASET,
+        "tagCount": len(I3X_TAGS),
+        "upstreamInfo": info,
+        "upstreamInfoStatus": status,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -79,14 +141,10 @@ async def health():
 # ---------------------------------------------------------------------------
 if STATIC_DIR.is_dir():
     logger.info("Serving React frontend from %s", STATIC_DIR)
-
-    # Serve static assets (JS, CSS, images, favicon, etc.)
     app.mount("/assets", StaticFiles(directory=STATIC_DIR / "assets"), name="assets")
 
-    # Catch-all: serve index.html for any non-API route (React SPA routing)
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str):
-        """Serve React index.html for client-side routing."""
         file_path = STATIC_DIR / full_path
         if file_path.is_file():
             return FileResponse(file_path)
@@ -100,5 +158,4 @@ else:
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     import uvicorn
-    logger.info("Starting Separator Energy Dashboard...")
     uvicorn.run("main:app", host="0.0.0.0", port=3030, reload=True)

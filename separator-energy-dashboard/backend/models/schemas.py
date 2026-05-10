@@ -66,6 +66,9 @@ class CurrentMetrics(BaseModel):
     tou_period:    str
     tou_rate:      float
     shift:         str
+    cost_today:    Optional[float] = None
+    last_updated:  Optional[str]   = None
+    is_stale:      bool            = False
 
 
 class EnergyConfig(BaseModel):
