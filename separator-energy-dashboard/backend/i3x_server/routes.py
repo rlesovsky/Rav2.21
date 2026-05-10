@@ -53,6 +53,33 @@ class RelatedBody(BaseModel):
     relationshipType: Optional[str] = None
 
 
+# --- Landing page (not in spec, UX nicety) ---------------------------------
+# A bare GET on /api/i3x/v1 returns a small map of available endpoints, so
+# anyone curling/browsing the prefix gets something useful instead of 404.
+# i3X-aware clients (ACE Explorer, MCP tools) ignore this and call /info
+# directly per spec.
+@router.get("")
+@router.get("/")
+async def index() -> dict:
+    return {
+        "message":     "Rav2.21 i3X server. Use the endpoints below or point an i3X-aware client (e.g. ACE Explorer) at this base URL.",
+        "specVersion": "1.0",
+        "serverName":  "Rav2.21 — Driftwood Separator Energy",
+        "endpoints": {
+            "info":              "GET  /api/i3x/v1/info",
+            "namespaces":        "GET  /api/i3x/v1/namespaces",
+            "objecttypes":       "GET  /api/i3x/v1/objecttypes",
+            "relationshiptypes": "GET  /api/i3x/v1/relationshiptypes",
+            "objects":           "GET  /api/i3x/v1/objects",
+            "objects_list":      "POST /api/i3x/v1/objects/list      body={elementIds:[...]}",
+            "objects_related":   "POST /api/i3x/v1/objects/related   body={elementId, relationshipType?}",
+            "objects_value":     "POST /api/i3x/v1/objects/value     body={elementIds:[...]}",
+            "objects_history":   "POST /api/i3x/v1/objects/history   body={elementIds:[...], startTime, endTime}",
+        },
+        "explorer": "https://github.com/cesmii/i3X-explorer",
+    }
+
+
 # --- /info ------------------------------------------------------------------
 @router.get("/info")
 async def get_info() -> dict:
