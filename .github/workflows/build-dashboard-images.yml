@@ -1,6 +1,12 @@
-# Build Separator Dashboard Docker images and export as .tar for Portainer
+# Build Separator Dashboard Docker images and export as .tar for Portainer.
+#
+# Builds two split images (separator-backend, separator-frontend) directly
+# from their per-service Dockerfiles — NOT via `docker compose build`. The
+# compose files reference pre-built images and don't carry `build:`
+# directives, so `compose build` would have nothing to do.
+#
 # Manual run: Actions → Build dashboard images → Run workflow
-# Artifact: separator-dashboard-images.tar (download and use on production server)
+# Artifact:   separator-dashboard-images.tar (load with `docker load -i`)
 
 name: Build dashboard images
 
@@ -21,22 +27,43 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build images
-        run: |
-          cd separator-energy-dashboard
-          docker compose build
+      - name: Build backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: separator-energy-dashboard/backend
+          file: separator-energy-dashboard/backend/Dockerfile
+          tags: separator-backend:latest
+          load: true                # Keep in the runner's local daemon for `docker save`
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-      - name: Tag images
+      - name: Build frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: separator-energy-dashboard/frontend
+          file: separator-energy-dashboard/frontend/Dockerfile
+          tags: separator-frontend:latest
+          load: true
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Verify images loaded into daemon
         run: |
-          cd separator-energy-dashboard
-          PROJECT_NAME="separator-energy-dashboard"
-          docker tag ${PROJECT_NAME}-separator-backend:latest separator-backend:latest
-          docker tag ${PROJECT_NAME}-separator-frontend:latest separator-frontend:latest
+          # `docker images repo1 repo2` only accepts one positional arg and
+          # exits 1 with a usage error. Use `image inspect` per image — it
+          # fails loudly (non-zero exit) if either image is missing, which is
+          # the exact verification semantic we want.
+          docker image inspect separator-backend:latest --format '{{.Id}} ({{.Architecture}}/{{.Os}}, size={{.Size}})'
+          docker image inspect separator-frontend:latest --format '{{.Id}} ({{.Architecture}}/{{.Os}}, size={{.Size}})'
 
       - name: Export to tar
         run: |
           cd separator-energy-dashboard
-          docker save -o separator-dashboard-images.tar separator-backend:latest separator-frontend:latest
+          docker save -o separator-dashboard-images.tar \
+            separator-backend:latest \
+            separator-frontend:latest
           ls -lh separator-dashboard-images.tar
 
       - name: Upload tar artifact
@@ -44,3 +71,4 @@ jobs:
         with:
           name: separator-dashboard-images
           path: separator-energy-dashboard/separator-dashboard-images.tar
+          retention-days: 30
