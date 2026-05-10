@@ -1,10 +1,15 @@
 # Rav2.21 — i3X Integration Architecture
 
-**Status:** Phase 0 complete. Phase 1 (consumer client) ready to start.
+**Status:** **Phases 1, 2, 3 v1 shipped on `feat/i3x-consumer-client`.** Phase 4 (subscriptions) deferred until a real subscriber asks.
 **Owners:** Randy Lesovsky (architect), Cursor (implementation), Claude (review/orchestration).
-**Scope:** Add full i3X interoperability — consume tag data from Timebase via i3X, and publish Rav2.21's derived signals (state, kW, cost, TOU period, shift) as an i3X server so other clients can browse and subscribe.
+**Scope:** Full i3X interoperability — consume tag data from Timebase via i3X, and publish Rav2.21's derived signals (state, kW, cost, TOU period, shift) as a 1.0-compliant i3X server at `/api/i3x/v1/*` so other clients can browse, read, and (eventually) subscribe.
 
-This document is the source of truth for all i3X-related work. Every task brief references it. **Cursor: when in doubt about an API shape or naming convention, this doc wins over your priors.**
+This document is the source of truth for the i3X *plan* and architecture. For what *actually shipped*, see:
+- [`phase1-shipped.md`](./phase1-shipped.md) — Phase 1 consumer + Phase 2 processing service
+- [`phase3-shipped.md`](./phase3-shipped.md) — Phase 3 i3X producer (v1, no subscriptions)
+- [`phase3-producer-plan.md`](./phase3-producer-plan.md) — original producer plan (now historical, kept for context)
+
+**Cursor: when in doubt about an API shape or naming convention, this doc wins over your priors.**
 
 ---
 
@@ -203,7 +208,7 @@ We expose passthrough tags too because it lets other i3X clients consume *all* t
 
 ## 5. Phasing
 
-### Phase 1 — Consumer i3X client (replaces `timebase_client.py`)
+### Phase 1 — Consumer i3X client (replaces `timebase_client.py`) ✅ SHIPPED
 
 New module `backend/services/i3x_client.py`. Same public function signatures as the legacy client so the rest of the backend doesn't move:
 
@@ -225,7 +230,7 @@ Legacy client kept as `timebase_client_legacy.py` behind `USE_I3X` env flag for 
 5. Quality filter drops non-`"GOOD"` points; verified with a unit test using a synthetic response.
 6. Boundary-point clamping: a unit test feeds a history response with a timestamp before `startTime` and asserts the adapter snaps it to `startTime`.
 
-### Phase 2 — Continuous processing service
+### Phase 2 — Continuous processing service ✅ SHIPPED
 
 Right now, `state_engine` and `cost_calculator` run inside FastAPI request handlers. To publish derived values via i3X, they must run *continuously*, not on demand.
 
@@ -244,7 +249,11 @@ New module `backend/services/processing.py`:
 3. Stopping the historian doesn't crash the app — processing logs errors, retains last good state, and keeps serving stale data with a `lastUpdated` field consumers can read.
 4. Ring buffer trims to configured size; no memory leak under 24h soak.
 
-### Phase 3 — Producer i3X server
+### Phase 3 — Producer i3X server ✅ SHIPPED (v1, no subscriptions)
+
+> Wire shape verified against `api.i3x.dev/v1` reference server. Endpoints
+> live at `/api/i3x/v1/*`, NOT `/i3x/*` as originally drafted. See
+> [`phase3-shipped.md`](./phase3-shipped.md) for the full manifest.
 
 New package `backend/i3x_server/` with FastAPI sub-router mounted at `/api/i3x/*`. Implements the spec endpoints:
 
@@ -262,7 +271,10 @@ Backed entirely by Phase 2's `LatestState` and ring buffer. The static parts (na
 4. Response shapes byte-match the spec examples (Cursor: validate against `docs/i3x-spec-snapshot.md` which we'll create from the captures).
 5. Error handling mirrors Timebase's behavior — `/objects/value` returns 200 with an error body for unknown elementIds; `/history` returns 200 with empty data.
 
-### Phase 4 — Subscriptions (producer-side first)
+### Phase 4 — Subscriptions (producer-side first) ⏸ DEFERRED
+
+> Reference server only advertises `subscribe.stream` (SSE), not sync poll.
+> Plan to ship just SSE when a real subscriber asks.
 
 `POST /i3x/subscriptions` family on the producer side. Backed by an asyncio pub-sub fed by the Phase 2 processing loop.
 

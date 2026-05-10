@@ -1,9 +1,16 @@
 # Separator Energy Cost Dashboard
+
+> **⚠️ HISTORICAL** — This document describes the pre-i3X architecture
+> (single REST consumer, no processing service, no producer). The system
+> has since been expanded with full i3X consumer + producer support and
+> a continuous processing service. For the current architecture, see
+> [`../README.md`](../README.md) and [`../docs/phase3-shipped.md`](../docs/phase3-shipped.md).
+
 ## Driftwood Dairy — El Monte, CA
 
 **Built by:** Texas Automation Systems
 **Date:** February 2025
-**Status:** POC (Proof of Concept)
+**Status:** POC (Proof of Concept) — superseded by i3X integration work in May 2026
 
 ---
 
