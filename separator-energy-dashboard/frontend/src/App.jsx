@@ -1,65 +1,112 @@
-import { useState, useRef, useCallback } from 'react'
-import Header from './components/Header'
-import LiveStatusCard from './components/LiveStatusCard'
-import KPISummaryCards from './components/KPISummaryCards'
-import StateCostBreakdown from './components/StateCostBreakdown'
-import ShiftCostBreakdown from './components/ShiftCostBreakdown'
-import CostByDayChart from './components/CostByDayChart'
-import EnergyTrendChart from './components/EnergyTrendChart'
-import StateTimeline from './components/StateTimeline'
-import RateConfigPanel from './components/RateConfigPanel'
+import { useState, useEffect, useCallback } from "react"
+import Header from "./components/Header"
+import RateConfigPanel from "./components/RateConfigPanel"
+import Tabs from "./components/Tabs"
+import WindowSelector from "./components/WindowSelector"
+import LiveKPIs from "./components/LiveKPIs"
+import KPISummaryCards from "./components/KPISummaryCards"
+import StateCostBreakdown from "./components/StateCostBreakdown"
+import ShiftCostBreakdown from "./components/ShiftCostBreakdown"
+import CostByDayChart from "./components/CostByDayChart"
+import EnergyTrendChart from "./components/EnergyTrendChart"
+import StateTimeline from "./components/StateTimeline"
+import I3xBadge from "./components/I3xBadge"
+import { useLiveCurrent } from "./hooks/useLiveCurrent"
+import { fetchSummary, fetchDaily, clearCache } from "./api/energyApi"
 
-const fontFamily = "'IBM Plex Sans', 'SF Pro Display', system-ui, sans-serif"
-const REFRESH_COMPONENT_COUNT = 8
+const TAB_LIVE = "live"
+const TAB_ANALYSIS = "analysis"
 
 export default function App() {
   const [refreshKey, setRefreshKey] = useState(0)
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const completedCountRef = useRef(0)
+  const [tab, setTab] = useState(TAB_LIVE)
+  const [days, setDays] = useState(7)
 
-  const handleRefresh = () => {
+  // Single live-data poll at the top of the tree; LiveStateCard and LiveKPIs
+  // both consume it via props — no duplicate requests.
+  const live = useLiveCurrent(refreshKey)
+
+  const handleRefresh = useCallback(() => {
+    clearCache()
     setIsRefreshing(true)
-    completedCountRef.current = 0
     setRefreshKey((k) => k + 1)
-  }
-
-  const onRefreshComplete = useCallback(() => {
-    completedCountRef.current += 1
-    if (completedCountRef.current === REFRESH_COMPONENT_COUNT) {
-      setIsRefreshing(false)
-    }
+    setTimeout(() => setIsRefreshing(false), 900)
   }, [])
 
+  // Warm the cache with 30-day data ~1.5s after first paint.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      Promise.all([
+        fetchSummary({ days: 30 }),
+        fetchSummary({ days: 30, offset: 30 }),
+        fetchDaily({ days: 30 }),
+      ]).catch(() => {})
+    }, 1500)
+    return () => clearTimeout(t)
+  }, [])
+
+  const onLive = tab === TAB_LIVE
+
   return (
-    <div
-      className="min-h-screen bg-slate-950 text-slate-100 relative"
-      style={{ fontFamily }}
-    >
-      {/* Grid pattern overlay */}
-      <div
-        className="fixed inset-0 pointer-events-none opacity-[0.03]"
-        style={{
-          backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
-          backgroundSize: '50px 50px',
-        }}
-      />
-      <Header onRefresh={handleRefresh} isRefreshing={isRefreshing} />
-      <main className="relative max-w-[1600px] mx-auto px-6 py-8 space-y-6">
-        <RateConfigPanel refreshKey={refreshKey} onRefreshComplete={onRefreshComplete} />
-        <LiveStatusCard refreshKey={refreshKey} onRefreshComplete={onRefreshComplete} />
-        <KPISummaryCards refreshKey={refreshKey} onRefreshComplete={onRefreshComplete} />
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <StateCostBreakdown refreshKey={refreshKey} onRefreshComplete={onRefreshComplete} />
-          <ShiftCostBreakdown refreshKey={refreshKey} onRefreshComplete={onRefreshComplete} />
+    <div className="min-h-screen bg-black text-white flex flex-col">
+      <main className="px-6 lg:px-8 2xl:px-12 py-5 flex-1 flex flex-col gap-4">
+        <Header onRefresh={handleRefresh} isRefreshing={isRefreshing} />
+        <RateConfigPanel refreshKey={refreshKey} />
+
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Tabs
+            value={tab}
+            onChange={setTab}
+            items={[
+              { value: TAB_LIVE, label: "Live" },
+              { value: TAB_ANALYSIS, label: "Analysis" },
+            ]}
+          />
+          {tab === TAB_ANALYSIS && (
+            <WindowSelector value={days} onChange={setDays} />
+          )}
         </div>
-        <CostByDayChart refreshKey={refreshKey} onRefreshComplete={onRefreshComplete} />
-        <EnergyTrendChart refreshKey={refreshKey} onRefreshComplete={onRefreshComplete} />
-        <StateTimeline refreshKey={refreshKey} onRefreshComplete={onRefreshComplete} />
+
+        <div
+          key={tab}
+          className={`tab-content flex flex-col gap-4 ${onLive ? "flex-1 min-h-0" : ""}`}
+        >
+          {onLive && (
+            <>
+              {/* Row 1: 7 mini cards — operating state + 6 live readings. */}
+              <LiveKPIs
+                current={live.data}
+                lastFetch={live.lastFetch}
+                error={live.error}
+              />
+
+              {/* Row 2: full-width 24h state distribution. */}
+              <StateTimeline refreshKey={refreshKey} />
+
+              {/* Row 3: power-draw chart fills remaining viewport. */}
+              <EnergyTrendChart refreshKey={refreshKey} className="flex-[4]" />
+            </>
+          )}
+
+          {!onLive && (
+            <>
+              <KPISummaryCards refreshKey={refreshKey} days={days} />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <StateCostBreakdown refreshKey={refreshKey} days={days} />
+                <ShiftCostBreakdown refreshKey={refreshKey} days={days} />
+              </div>
+              <CostByDayChart refreshKey={refreshKey} days={days} />
+            </>
+          )}
+        </div>
       </main>
-      <footer className="relative border-t border-slate-800 py-4 mt-8">
-        <div className="max-w-[1600px] mx-auto px-6 text-center text-slate-500 text-sm">
-          Driftwood Dairy — El Monte, CA · Texas Automation Systems · SCE TOU-GS-2 · Rolling 7-Day Analysis
-        </div>
+
+      <footer className="px-6 lg:px-8 2xl:px-12 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-600">
+        <span>
+          Driftwood Dairy — El Monte, CA · Texas Automation Systems · SCE TOU-GS-2 · Rolling analysis
+        </span>
+        <I3xBadge />
       </footer>
     </div>
   )

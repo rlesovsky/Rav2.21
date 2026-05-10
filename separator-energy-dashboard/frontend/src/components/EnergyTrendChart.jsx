@@ -1,26 +1,19 @@
-import { useState, useEffect } from 'react'
-import { fetchTimeline } from '../api/energyApi'
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import InfoTooltip from './InfoTooltip'
-import dayjs from 'dayjs'
+import { useState, useEffect } from "react"
+import { fetchTimeline } from "../api/energyApi"
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import InfoTooltip from "./InfoTooltip"
+import dayjs from "dayjs"
 
-const STATE_COLORS = {
-  Processing: '#22C55E',
-  CIP: '#3B82F6',
-  Idle: '#F59E0B',
-  Shutdown: '#6B7280',
-}
-
-function Skeleton() {
+function Skeleton({ className = "" }) {
   return (
-    <div className="bg-slate-800/30 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 h-80 animate-pulse">
-      <div className="h-6 bg-slate-700/50 rounded w-44 mb-4" />
-      <div className="h-56 bg-slate-700/50 rounded" />
+    <div className={`card p-5 min-h-80 animate-pulse ${className}`}>
+      <div className="h-5 w-44 bg-white/[0.06] rounded mb-4" />
+      <div className="h-56 bg-white/[0.06] rounded" />
     </div>
   )
 }
 
-export default function EnergyTrendChart({ refreshKey, onRefreshComplete }) {
+export default function EnergyTrendChart({ refreshKey, className = "" }) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -30,119 +23,140 @@ export default function EnergyTrendChart({ refreshKey, onRefreshComplete }) {
     setError(null)
     fetchTimeline()
       .then((res) => { if (!cancelled) setData(res.data) })
-      .catch((err) => { if (!cancelled) setError(err.message || 'Failed to load') })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-        onRefreshComplete?.()
-      })
+      .catch((err) => { if (!cancelled) setError(err.message || "Failed to load") })
+      .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  }, [refreshKey, onRefreshComplete])
+  }, [refreshKey])
 
-  if (loading && !data) return <Skeleton />
-  if (error) {
-    return (
-      <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-6">
-        <h2 className="text-slate-300 font-medium mb-4">Power Draw (24-Hour)</h2>
-        <div className="text-red-400">Error: {error}</div>
-      </div>
-    )
-  }
+  if (loading && !data) return <Skeleton className={className} />
+  if (error) return <div className={`card p-5 text-red-400 ${className}`}>Error: {error}</div>
 
-  /* Insert null-kW gap markers between points that are > 5 min apart
-     so Recharts breaks the line instead of drawing across dead time */
+  // Insert null-kw breaks where points are >5 minutes apart so the line
+  // doesn't draw across dead time.
   const GAP_MS = 5 * 60 * 1000
-  const chartData = []
   const raw = (data ?? []).map((p) => ({
     ...p,
     ts: dayjs(p.timestamp).valueOf(),
-    fullTime: dayjs(p.timestamp).format('MMM D, h:mm A'),
+    fullTime: dayjs(p.timestamp).format("MMM D, h:mm A"),
   }))
+  const chartData = []
   for (let i = 0; i < raw.length; i++) {
     if (i > 0 && raw[i].ts - raw[i - 1].ts > GAP_MS) {
-      /* Insert a null point just after the previous point to break the line */
       chartData.push({ ts: raw[i - 1].ts + 1, kw: null })
     }
     chartData.push(raw[i])
   }
 
-  /* Build clean hourly ticks spanning the full 24-hour window */
+  // Hourly ticks across the visible window, downsampled if it gets crowded.
   const hourlyTicks = (() => {
     if (!chartData.length) return []
-    const first = dayjs(chartData[0].timestamp ?? chartData[0].ts).startOf('hour')
-    const last  = dayjs(chartData[chartData.length - 1].timestamp ?? chartData[chartData.length - 1].ts)
+    const first = dayjs(chartData[0].ts).startOf("hour")
+    const last = dayjs(chartData[chartData.length - 1].ts)
     const ticks = []
     let cur = first
     while (cur.isBefore(last) || cur.isSame(last)) {
       ticks.push(cur.valueOf())
-      cur = cur.add(1, 'hour')
+      cur = cur.add(1, "hour")
     }
-    /* If there are too many ticks for the width, show every 2nd or 3rd hour */
-    if (ticks.length > 24) {
-      return ticks.filter((_, i) => i % 3 === 0)
-    }
-    if (ticks.length > 14) {
-      return ticks.filter((_, i) => i % 2 === 0)
-    }
+    if (ticks.length > 24) return ticks.filter((_, i) => i % 3 === 0)
+    if (ticks.length > 14) return ticks.filter((_, i) => i % 2 === 0)
     return ticks
   })()
 
+  // Auto-zoom Y axis to the actual data range so the chart isn't 75% empty.
+  const kwValues = chartData.map((p) => p.kw).filter((v) => v != null && Number.isFinite(v))
+  const yDomain = (() => {
+    if (kwValues.length === 0) return [0, "auto"]
+    const min = Math.min(...kwValues)
+    const max = Math.max(...kwValues)
+    const span = Math.max(1, max - min)
+    const pad = span * 0.15
+    return [Math.max(0, Math.floor(min - pad)), Math.ceil(max + pad)]
+  })()
+
   return (
-    <div className="bg-slate-800/30 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 hover:border-slate-500 hover:bg-slate-800/60 transition-all duration-200">
-      <div className="flex items-center gap-1 mb-4">
-        <h2 className="text-slate-300 font-medium">Power Draw (24-Hour)</h2>
+    // The card IS the flex item — `className` from the parent supplies the
+    // flex sizing (e.g. "flex-[4] min-h-80"). Inside the card, header is
+    // shrink-0 and the chart container takes flex-1 to fill the remainder.
+    <div className={`card card-hover p-5 flex flex-col min-h-80 ${className}`}>
+      <div className="flex items-center gap-2 mb-3 shrink-0">
+        <h2 className="text-sm font-medium text-white">Power draw — 24 hour</h2>
         <InfoTooltip
-          title="Power Draw (24-Hour)"
+          title="Power draw — 24 hour"
           lines={[
-            'Source: Last 24 hours of Motor Amps from TimeBase',
-            'Snapped to nearest 1-minute interval (no interpolation)',
-            'kW = (Amps x 460V x 1.732 x 0.88) / 1000',
-            'Tooltip shows state, TOU period, and shift at each point',
+            "Source: last 24 hours of Motor Amps from Timebase",
+            "Snapped to nearest 1-minute (no interpolation)",
+            "kW = (Amps x 460V x 1.732 x 0.88) / 1000",
+            "Y axis auto-zoomed to data range; gradient fill shows magnitude",
           ]}
         />
       </div>
-      <div className="h-72">
+      {/* Recharts ResponsiveContainer needs a definite-sized parent. When the
+          card is grown via flex-1 inside a nested flex column, the chained
+          h-full / flex-1 doesn't always resolve to a measurable pixel value
+          and the chart renders 0x0. Wrapping it in relative+absolute gives
+          ResponsiveContainer real dimensions to read. */}
+      <div className="flex-1 min-h-64 relative">
+        <div className="absolute inset-0">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+          <AreaChart data={chartData} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
             <defs>
-              <linearGradient id="gradKw" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#22D3EE" stopOpacity={0.4} />
-                <stop offset="100%" stopColor="#22D3EE" stopOpacity={0} />
+              <linearGradient id="kwFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#22d3ee" stopOpacity={0.22} />
+                <stop offset="100%" stopColor="#22d3ee" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+            <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
             <XAxis
               dataKey="ts"
               type="number"
-              domain={['dataMin', 'dataMax']}
+              domain={["dataMin", "dataMax"]}
               scale="time"
               ticks={hourlyTicks}
-              tickFormatter={(v) => dayjs(v).format('h A')}
-              tick={{ fill: '#94a3b8', fontSize: 12 }}
+              tickFormatter={(v) => dayjs(v).format("h A")}
+              tick={{ fill: "#6b7280", fontSize: 11 }}
+              tickLine={false}
+              axisLine={false}
             />
-            <YAxis tick={{ fill: '#94a3b8', fontSize: 12 }} tickFormatter={(v) => `${v} kW`} domain={[0, 'auto']} />
-            <Tooltip
-              cursor={{ stroke: '#94a3b8', strokeOpacity: 0.2 }}
-              content={({ active, payload }) => {
-                if (!active || !payload?.length) return null
-                const p = payload[0]?.payload
-                return (
-                  <div className="bg-slate-800 border border-slate-600 rounded-lg p-3 shadow-xl">
-                    {p && (
-                      <p className="text-slate-200 font-medium mb-1">
-                        {p.fullTime} — {p.state} · {p.tou_period} · {p.shift}
-                      </p>
-                    )}
-                    <p className="text-sm text-cyan-400">
-                      kW: {Number(payload[0].value).toFixed(1)}
-                    </p>
-                  </div>
-                )
-              }}
+            <YAxis
+              tick={{ fill: "#6b7280", fontSize: 11 }}
+              tickLine={false}
+              axisLine={false}
+              tickFormatter={(v) => `${v}`}
+              domain={yDomain}
             />
-            <Area type="linear" dataKey="kw" stroke="#22D3EE" fill="url(#gradKw)" strokeWidth={1.5} dot={false} isAnimationActive={false} connectNulls={false} />
+            <Tooltip cursor={{ stroke: "rgba(255,255,255,0.10)", strokeDasharray: "3 3" }} content={<TrendTooltip />} />
+            <Area
+              type="monotone"
+              dataKey="kw"
+              stroke="#22d3ee"
+              strokeWidth={1.75}
+              fill="url(#kwFill)"
+              dot={false}
+              isAnimationActive={false}
+              connectNulls={false}
+            />
           </AreaChart>
         </ResponsiveContainer>
+        </div>
       </div>
+    </div>
+  )
+}
+
+function TrendTooltip({ active, payload }) {
+  if (!active || !payload?.length) return null
+  const p = payload[0]?.payload
+  if (p?.kw == null) return null
+  return (
+    <div className="rounded-lg border border-white/[0.12] bg-[#0a0a0a] px-3 py-2 text-xs">
+      {p && (
+        <div className="text-white mb-0.5">
+          {p.fullTime}{p.state ? ` · ${p.state}` : ""}
+          {p.tou_period ? ` · ${p.tou_period}` : ""}
+        </div>
+      )}
+      <div className="num text-cyan-400">{Number(payload[0].value).toFixed(1)} kW</div>
     </div>
   )
 }

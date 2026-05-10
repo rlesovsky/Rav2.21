@@ -21,13 +21,22 @@ class ShiftMetrics(BaseModel):
     by_state:  dict[str, StateMetrics]
 
 
+class TouPeriodMetrics(BaseModel):
+    hours:    float
+    kwh:      float
+    cost_usd: float
+    pct_cost: float = 0.0
+
+
 class EnergySummary(BaseModel):
     period:         str
+    days:           int = 0
     rate_per_kwh:   float
     total_cost_usd: float
     total_kwh:      float
     by_state:       dict[str, StateMetrics]
     by_shift:       dict[str, ShiftMetrics]
+    by_tou_period:  dict[str, TouPeriodMetrics] = {}
 
 
 class DailyStateMetrics(BaseModel):

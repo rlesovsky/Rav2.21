@@ -21,9 +21,11 @@ import asyncio
 import logging
 from collections import deque
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from zoneinfo import ZoneInfo
+
+import pandas as pd
 
 from config import (
     FACILITY_TIMEZONE,
@@ -212,10 +214,71 @@ async def _loop() -> None:
 
 
 # --- Lifecycle --------------------------------------------------------------
+async def _backfill_buffer() -> None:
+    """Pre-populate the ring buffer with the last PROCESSING_BUFFER_MINUTES
+    from the historian.
+
+    Without this, after a restart the buffer starts empty and the timeline
+    chart shows only the minutes that have ticked since boot — claiming
+    "24 hour" while displaying 5 minutes of data. The backfill blocks startup
+    by ~2-5s but guarantees the live tab has a full 24h chart immediately.
+    """
+    global _last_buffer_minute
+    if len(_buffer) > 0:
+        return  # already populated (e.g., test or hot-reload)
+
+    now = datetime.now(timezone.utc)
+    start = now - timedelta(minutes=PROCESSING_BUFFER_MINUTES)
+
+    try:
+        raw = await historian_client.fetch_all_tags(start=start, end=now)
+        df = state_engine.build_dataframe(raw)
+    except Exception as exc:
+        logger.warning(
+            "processing backfill: historian fetch failed (%s); buffer will fill from live ticks",
+            exc,
+        )
+        return
+
+    if df.empty:
+        logger.info("processing backfill: historian returned no data")
+        return
+
+    df = cost_calculator.calculate_costs(df)
+
+    appended = 0
+    for ts, row in df.iterrows():
+        kw_raw = row.get("kw")
+        if pd.isna(kw_raw):
+            continue
+        minute_key = ts.to_pydatetime()
+        if minute_key.tzinfo is None:
+            minute_key = minute_key.replace(tzinfo=timezone.utc)
+        minute_key = minute_key.replace(second=0, microsecond=0)
+        state = row.get("state", state_engine.STATE_SHUTDOWN)
+        _buffer.append((minute_key, {
+            "state":      state,
+            "color":      state_engine.STATE_COLORS.get(state, "#000000"),
+            "kw":         float(kw_raw),
+            "tou_period": row.get("tou_period", "Off-Peak"),
+            "tou_rate":   float(row.get("tou_rate", 0.0)),
+            "shift":      row.get("shift", "Unknown"),
+        }))
+        appended += 1
+
+    if _buffer:
+        _last_buffer_minute = _buffer[-1][0]
+
+    logger.info("processing backfill: pre-populated %d minutes from historian", appended)
+
+
 async def start() -> None:
     global _task
     if _task is not None and not _task.done():
         return
+    # Backfill the ring buffer first so the live tab shows a real 24h
+    # window the moment the dashboard loads, not a slowly-growing series.
+    await _backfill_buffer()
     _task = asyncio.create_task(_loop(), name="processing-loop")
     logger.info(
         "processing loop started (interval=%ss, buffer=%dm, stale_after=%ss)",

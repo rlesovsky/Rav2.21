@@ -1,26 +1,27 @@
-import { useState, useEffect } from 'react'
-import { fetchSummary } from '../api/energyApi'
-import { formatCurrency, formatKwh, formatHours, formatPercent } from '../utils/formatters'
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts'
-import InfoTooltip from './InfoTooltip'
+import { useState, useEffect } from "react"
+import { fetchSummary } from "../api/energyApi"
+import { formatCurrency, formatPercent } from "../utils/formatters"
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts"
+import InfoTooltip from "./InfoTooltip"
 
 const STATE_COLORS = {
-  Processing: '#22C55E',
-  CIP: '#3B82F6',
-  Idle: '#F59E0B',
-  Shutdown: '#6B7280',
+  Processing: "#22c55e",
+  CIP: "#3b82f6",
+  Idle: "#f59e0b",
+  Shutdown: "#6b7280",
 }
+const STATE_ORDER = ["Processing", "CIP", "Idle", "Shutdown"]
 
 function Skeleton() {
   return (
-    <div className="bg-slate-800/30 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 h-96 animate-pulse">
-      <div className="h-6 bg-slate-700/50 rounded w-48 mb-4" />
-      <div className="h-64 bg-slate-700/50 rounded" />
+    <div className="card p-5 h-96 animate-pulse">
+      <div className="h-5 w-48 bg-white/[0.06] rounded mb-4" />
+      <div className="h-64 bg-white/[0.06] rounded" />
     </div>
   )
 }
 
-export default function StateCostBreakdown({ refreshKey, onRefreshComplete }) {
+export default function StateCostBreakdown({ refreshKey, days = 7 }) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -28,52 +29,46 @@ export default function StateCostBreakdown({ refreshKey, onRefreshComplete }) {
   useEffect(() => {
     let cancelled = false
     setError(null)
-    fetchSummary()
+    fetchSummary({ days })
       .then((res) => { if (!cancelled) setData(res.data) })
-      .catch((err) => { if (!cancelled) setError(err.message || 'Failed to load') })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-        onRefreshComplete?.()
-      })
+      .catch((err) => { if (!cancelled) setError(err.message || "Failed to load") })
+      .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  }, [refreshKey, onRefreshComplete])
+  }, [refreshKey, days])
 
   if (loading && !data) return <Skeleton />
-  if (error) {
-    return (
-      <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-6">
-        <h2 className="text-slate-300 font-medium mb-4">Cost by Operating State</h2>
-        <div className="text-red-400">Error: {error}</div>
-      </div>
-    )
-  }
+  if (error) return <div className="card p-5 text-red-400">Error: {error}</div>
 
   const byState = data?.by_state ?? {}
-  const pieData = Object.entries(byState).map(([name, s]) => ({
-    name,
-    value: s.cost_usd ?? 0,
-    color: STATE_COLORS[name] ?? '#6B7280',
-  })).filter((d) => d.value > 0)
+  const pieData = STATE_ORDER
+    .map((name) => ({
+      name,
+      value: byState[name]?.cost_usd ?? 0,
+      pct: byState[name]?.pct_time ?? 0,
+      color: STATE_COLORS[name],
+    }))
+    .filter((d) => d.value > 0)
 
   return (
-    <div className="bg-slate-800/30 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 hover:border-slate-500 hover:bg-slate-800/60 transition-all duration-200">
-      <div className="flex items-center gap-1 mb-4">
-        <h2 className="text-slate-300 font-medium">7-Day Cost by Operating State</h2>
+    <div className="card card-hover p-5">
+      <div className="flex items-center gap-2 mb-3">
+        <h2 className="text-sm font-medium text-white">
+          {days === 7 ? "7-day" : `${days}-day`} cost by operating state
+        </h2>
         <InfoTooltip
-          title="Cost by Operating State"
+          title="Cost by operating state"
           lines={[
-            'Source: 7-day data from TimeBase Historian',
-            'Tags: Process, CIP, Running (Process Values)',
-            'Processing: Process=true',
-            'CIP: CIP=true',
-            'Idle: Running=true, Process & CIP both false',
-            'Shutdown: all tags false',
-            'Cost per minute = kW x TOU rate / 60',
-            '% = state cost / total cost x 100',
+            "Source: 7-day data from Timebase",
+            "Processing = Process true",
+            "CIP = CIP true",
+            "Idle = Running true, Process & CIP false",
+            "Shutdown = all tags false",
+            "Cost per minute = kW x TOU rate / 60",
           ]}
         />
       </div>
-      <div className="h-64 mb-6">
+
+      <div className="h-64">
         {pieData.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -83,61 +78,49 @@ export default function StateCostBreakdown({ refreshKey, onRefreshComplete }) {
                 nameKey="name"
                 cx="50%"
                 cy="50%"
-                outerRadius="80%"
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                innerRadius="58%"
+                outerRadius="86%"
+                stroke="none"
+                paddingAngle={1.5}
+                isAnimationActive={false}
               >
-                {pieData.map((entry, i) => (
+                {pieData.map((entry) => (
                   <Cell key={entry.name} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip
-                content={({ active, payload }) => {
-                  if (!active || !payload?.length) return null
-                  return (
-                    <div className="bg-slate-800 border border-slate-600 rounded-lg p-3 shadow-xl">
-                      {payload.map((entry) => (
-                        <p key={entry.name} className="text-sm" style={{ color: entry.payload?.color || entry.color }}>
-                          {entry.name}: {formatCurrency(entry.value)}
-                        </p>
-                      ))}
-                    </div>
-                  )
-                }}
-              />
-              <Legend />
+              <Tooltip content={<DonutTooltip />} />
             </PieChart>
           </ResponsiveContainer>
         ) : (
-          <div className="h-full flex items-center justify-center text-slate-500">No data</div>
+          <div className="flex h-full items-center justify-center text-sm text-gray-500">No data</div>
         )}
       </div>
-      <div className="bg-slate-700/30 rounded-lg overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-slate-500 border-b border-slate-600/50">
-              <th className="text-left py-2 px-3">State</th>
-              <th className="text-right py-2 px-3">Hours</th>
-              <th className="text-right py-2 px-3">kWh</th>
-              <th className="text-right py-2 px-3">Cost</th>
-              <th className="text-right py-2 px-3">%</th>
-            </tr>
-          </thead>
-          <tbody>
-            {Object.entries(byState).map(([name, s]) => (
-              <tr key={name} className="border-b border-slate-600/30 last:border-0">
-                <td className="py-2 px-3">
-                  <span className="inline-block w-2 h-2 rounded-full mr-2" style={{ backgroundColor: STATE_COLORS[name] ?? '#6B7280' }} />
-                  {name}
-                </td>
-                <td className="text-right font-mono text-slate-300 py-2 px-3">{formatHours(s.hours)}</td>
-                <td className="text-right font-mono text-slate-300 py-2 px-3">{formatKwh(s.kwh)}</td>
-                <td className="text-right font-mono text-slate-300 py-2 px-3">{formatCurrency(s.cost_usd)}</td>
-                <td className="text-right font-mono text-slate-300 py-2 px-3">{formatPercent(s.pct_time)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+
+      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
+        {STATE_ORDER.map((name) => (
+          <span key={name} className="flex items-center gap-1.5 text-gray-400">
+            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: STATE_COLORS[name] }} />
+            <span>{name}</span>
+            <span className="num text-gray-500">
+              {formatPercent(byState[name]?.pct_time ?? 0)}
+            </span>
+          </span>
+        ))}
       </div>
+    </div>
+  )
+}
+
+function DonutTooltip({ active, payload }) {
+  if (!active || !payload?.length) return null
+  const p = payload[0]
+  return (
+    <div className="rounded-lg border border-white/[0.10] bg-black px-3 py-2 text-xs">
+      <div className="flex items-center gap-1.5 mb-0.5">
+        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: p.payload.color }} />
+        <span className="text-white">{p.name}</span>
+      </div>
+      <div className="num text-gray-400">{formatCurrency(p.value)} · {formatPercent(p.payload.pct)}</div>
     </div>
   )
 }

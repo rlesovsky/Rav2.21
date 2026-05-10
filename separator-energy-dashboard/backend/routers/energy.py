@@ -11,32 +11,43 @@ from models.schemas import (
     EnergySummary, DailyRecord, TimelinePoint,
     CurrentMetrics, EnergyConfig, RawDebugResponse,
 )
-from services import historian_client, state_engine, cost_calculator, processing
+from services import historian_client, state_engine, cost_calculator, processing, analytics
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api")
 
 
 # ---------------------------------------------------------------------------
-# GET /api/energy/summary — 7-day totals by state
+# GET /api/energy/summary — totals by state, shift, and TOU period
+#
+# Window controls:
+#   days   = window length in days (default 7, max 90)
+#   offset = how many days before "now" the window ENDS (default 0 = ending now)
+#
+# Used by the frontend to fetch both the current period and a prior period for
+# week-over-week / period-over-period delta computation. Example:
+#   current 7d:  ?days=7
+#   prior 7d:    ?days=7&offset=7
+#   current 30d: ?days=30
+#   prior 30d:   ?days=30&offset=30
 # ---------------------------------------------------------------------------
 @router.get("/energy/summary", response_model=EnergySummary)
-async def get_summary():
-    """Return total 7-day energy cost and kWh broken down by operating state."""
-    raw = await historian_client.fetch_all_tags()
-    df  = state_engine.build_dataframe(raw)
-    return cost_calculator.aggregate_summary(df)
+async def get_summary(
+    days: int = Query(default=7, ge=1, le=90),
+    offset: int = Query(default=0, ge=0, le=365),
+):
+    return await analytics.get_summary(days, offset)
 
 
 # ---------------------------------------------------------------------------
-# GET /api/energy/daily — per-day breakdown
+# GET /api/energy/daily — per-day breakdown over the configured window
 # ---------------------------------------------------------------------------
 @router.get("/energy/daily", response_model=list[DailyRecord])
-async def get_daily():
-    """Return daily energy cost segmented by state for the last 7 days."""
-    raw = await historian_client.fetch_all_tags()
-    df  = state_engine.build_dataframe(raw)
-    return cost_calculator.aggregate_daily(df)
+async def get_daily(
+    days: int = Query(default=7, ge=1, le=90),
+    offset: int = Query(default=0, ge=0, le=365),
+):
+    return await analytics.get_daily(days, offset)
 
 
 # ---------------------------------------------------------------------------

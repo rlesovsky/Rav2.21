@@ -273,16 +273,36 @@ def aggregate_summary(df: pd.DataFrame) -> dict:
 
     by_shift = aggregate_by_shift(df)
 
+    # By TOU period — surfaces the on-peak/off-peak share so operators can see
+    # how much of the bill comes from expensive hours.
+    by_tou_period = {}
+    for period in ("On-Peak", "Mid-Peak", "Off-Peak", "Super Off-Peak"):
+        period_df = df[df["tou_period"] == period]
+        n = len(period_df)
+        if n == 0:
+            by_tou_period[period] = {"hours": 0.0, "kwh": 0.0, "cost_usd": 0.0, "pct_cost": 0.0}
+            continue
+        cost = round(period_df["cost_usd"].sum(), 2)
+        by_tou_period[period] = {
+            "hours":    round(n / 60, 1),
+            "kwh":      round(period_df["kwh"].sum(), 1),
+            "cost_usd": cost,
+            "pct_cost": round((cost / total_cost) * 100, 1) if total_cost > 0 else 0.0,
+        }
+
     period_start = df.index.min().strftime("%Y-%m-%d") if not df.empty else "N/A"
     period_end   = df.index.max().strftime("%Y-%m-%d") if not df.empty else "N/A"
+    days_span    = max(1, int(round((df.index.max() - df.index.min()).total_seconds() / 86400)))
 
     return {
         "period":         f"{period_start} to {period_end}",
+        "days":           days_span,
         "rate_per_kwh":   _runtime_config["rate_per_kwh"],
         "total_cost_usd": total_cost,
         "total_kwh":      total_kwh,
         "by_state":       by_state,
         "by_shift":       by_shift,
+        "by_tou_period":  by_tou_period,
     }
 
 
@@ -452,11 +472,17 @@ def _empty_summary() -> dict:
         name: {"hours": 0, "kwh": 0, "cost_usd": 0, "by_state": dict(by_state)}
         for name in SHIFTS
     }
+    by_tou_period = {
+        p: {"hours": 0, "kwh": 0, "cost_usd": 0, "pct_cost": 0}
+        for p in ("On-Peak", "Mid-Peak", "Off-Peak", "Super Off-Peak")
+    }
     return {
         "period":         "No data",
+        "days":           0,
         "rate_per_kwh":   _runtime_config["rate_per_kwh"],
         "total_cost_usd": 0,
         "total_kwh":      0,
         "by_state":       by_state,
         "by_shift":       by_shift,
+        "by_tou_period":  by_tou_period,
     }

@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from 'react'
-import { createPortal } from 'react-dom'
-import { Info, X } from 'lucide-react'
+import { useState, useRef, useEffect } from "react"
+import { createPortal } from "react-dom"
+import { Info, X } from "lucide-react"
 
 export default function InfoTooltip({ title, lines }) {
   const [open, setOpen] = useState(false)
@@ -28,8 +28,8 @@ export default function InfoTooltip({ title, lines }) {
         setOpen(false)
       }
     }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
   }, [open])
 
   return (
@@ -38,27 +38,30 @@ export default function InfoTooltip({ title, lines }) {
         ref={buttonRef}
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="text-slate-500 hover:text-slate-300 transition-colors p-1 rounded"
+        className="text-gray-500 hover:text-gray-300 transition-colors p-0.5 rounded"
         aria-label="Show methodology"
       >
-        <Info className="w-4 h-4" />
+        <Info className="w-3.5 h-3.5" />
       </button>
       {open && createPortal(
         <div
           ref={panelRef}
-          className="fixed w-80 bg-slate-800 border border-slate-600 rounded-lg shadow-2xl p-4 text-sm"
+          className="fixed w-80 rounded-lg border border-white/[0.10] bg-black p-3 text-xs shadow-2xl"
           style={{ top: pos.top, left: pos.left, zIndex: 9999 }}
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-slate-200 font-medium">{title}</span>
-            <button type="button" onClick={() => setOpen(false)} className="text-slate-500 hover:text-slate-300">
-              <X className="w-3.5 h-3.5" />
+            <span className="text-white font-medium">{title}</span>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="text-gray-500 hover:text-white"
+              aria-label="Close"
+            >
+              <X className="w-3 h-3" />
             </button>
           </div>
-          <div className="space-y-2 text-slate-400">
-            {lines.map((line, i) => (
-              <p key={i}>{line}</p>
-            ))}
+          <div className="space-y-1.5 text-gray-400 leading-relaxed">
+            {lines.map((line, i) => <p key={i}>{line}</p>)}
           </div>
         </div>,
         document.body,
