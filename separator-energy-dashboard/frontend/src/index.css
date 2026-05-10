@@ -1,1 +1,85 @@
 @import "tailwindcss";
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+@theme {
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  background: #000;
+  color: #fff;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "cv11", "ss01";
+}
+
+/* Tabular nums everywhere by default — every number in this app
+   sits in a column where alignment matters more than density. */
+.num,
+input[type="number"] {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* The signature gradient title (cyan -> purple). */
+.title-gradient {
+  background: linear-gradient(90deg, #22d3ee 0%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Slightly-lifted card on a true-black page. The 8% white border + lift
+   gives cards real presence without losing the MaestroHub-style restraint.
+   Box-shadow is a single faint inset highlight at the top edge to suggest
+   a thin bezel; combined with the border it reads as a tangible surface. */
+.card {
+  background: #0a0a0a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.03);
+}
+
+.card-hover {
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+.card-hover:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: #101010;
+}
+
+/* Slimmer label style (KPI labels, axis labels). */
+.label {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6b7280; /* gray-500 */
+  font-weight: 500;
+}
+
+/* Recharts tooltip overrides — no chunky default styling. */
+.recharts-default-tooltip {
+  background: #0a0a0a !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 10px !important;
+  font-size: 12px !important;
+}
+
+/* Tab content fade-in. The parent re-keys on tab change so React
+   remounts and the animation runs fresh each time. */
+@keyframes tabFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.tab-content {
+  animation: tabFadeIn 0.18s ease-out;
+}

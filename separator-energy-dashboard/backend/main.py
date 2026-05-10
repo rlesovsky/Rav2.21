@@ -22,7 +22,7 @@ load_dotenv()
 
 from config import I3X_BASE_URL, USE_I3X
 from routers.energy import router as energy_router
-from services import historian_client, processing
+from services import analytics, historian_client, processing
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -65,10 +65,12 @@ async def lifespan(app: FastAPI):
         logger.error("Historian client startup failed: %s", exc)
         raise
     await processing.start()
+    await analytics.start_prewarm()
 
     yield
 
-    logger.info("Shutting down — stopping processing loop, closing historian client")
+    logger.info("Shutting down — stopping prewarm + processing, closing historian client")
+    await analytics.stop_prewarm()
     await processing.stop()
     await historian_client.shutdown()
 
