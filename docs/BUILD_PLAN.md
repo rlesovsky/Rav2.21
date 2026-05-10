@@ -1,8 +1,14 @@
 # Separator Energy Cost Dashboard — Build Plan
 
-**Client:** Driftwood Dairy — El Monte, CA  
-**Separator:** Unit 1, Raw Side  
-**Developer:** Texas Automation Systems / Randy Lesovsky  
+> **⚠️ HISTORICAL** — This is the original Feb 2026 build plan, written
+> before the i3X integration work. Kept for context. For what actually
+> shipped, see [`phase1-shipped.md`](./phase1-shipped.md) (consumer +
+> processing) and [`phase3-shipped.md`](./phase3-shipped.md) (producer).
+> For the current architecture, see [`../README.md`](../README.md).
+
+**Client:** Driftwood Dairy — El Monte, CA
+**Separator:** Unit 1, Raw Side
+**Developer:** Texas Automation Systems / Randy Lesovsky
 **Date:** February 2026
 
 ---
