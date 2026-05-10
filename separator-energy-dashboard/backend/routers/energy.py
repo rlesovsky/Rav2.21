@@ -11,7 +11,7 @@ from models.schemas import (
     EnergySummary, DailyRecord, TimelinePoint,
     CurrentMetrics, EnergyConfig, RawDebugResponse,
 )
-from services import timebase_client, state_engine, cost_calculator
+from services import historian_client, state_engine, cost_calculator, processing
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api")
@@ -23,7 +23,7 @@ router = APIRouter(prefix="/api")
 @router.get("/energy/summary", response_model=EnergySummary)
 async def get_summary():
     """Return total 7-day energy cost and kWh broken down by operating state."""
-    raw = await timebase_client.fetch_all_tags()
+    raw = await historian_client.fetch_all_tags()
     df  = state_engine.build_dataframe(raw)
     return cost_calculator.aggregate_summary(df)
 
@@ -34,43 +34,44 @@ async def get_summary():
 @router.get("/energy/daily", response_model=list[DailyRecord])
 async def get_daily():
     """Return daily energy cost segmented by state for the last 7 days."""
-    raw = await timebase_client.fetch_all_tags()
+    raw = await historian_client.fetch_all_tags()
     df  = state_engine.build_dataframe(raw)
     return cost_calculator.aggregate_daily(df)
 
 
 # ---------------------------------------------------------------------------
-# GET /api/energy/timeline — last 24-hr minute-by-minute
+# GET /api/energy/timeline — last 24-hr minute-by-minute (from ring buffer)
 # ---------------------------------------------------------------------------
 @router.get("/energy/timeline", response_model=list[TimelinePoint])
 async def get_timeline():
-    """Return per-minute kW, state, and cost for the last 24 hours."""
+    """Return per-minute kW, state, and cost for the last 24 hours.
+
+    Sourced from the in-memory ring buffer maintained by the processing loop.
+    On a cold start the buffer fills up over time; clients should expect a
+    growing series until 24h have elapsed since boot.
+    """
+    points = processing.timeline_points()
+    if points:
+        return points
+    # Cold start fallback — read directly from the historian for the first tick.
     now   = datetime.now(timezone.utc)
     start = now - timedelta(hours=24)
-    raw   = await timebase_client.fetch_all_tags(start=start, end=now)
+    raw   = await historian_client.fetch_all_tags(start=start, end=now)
     df    = state_engine.build_dataframe(raw)
     return cost_calculator.aggregate_timeline(df)
 
 
 # ---------------------------------------------------------------------------
-# GET /api/energy/current — live snapshot
+# GET /api/energy/current — live snapshot (from LatestState, no historian I/O)
 # ---------------------------------------------------------------------------
 @router.get("/energy/current", response_model=CurrentMetrics)
 async def get_current():
-    """Return current motor amps, kW, live $/hr cost, TOU period, and shift."""
-    values = await timebase_client.fetch_current_values()
-    now = datetime.now(timezone.utc)
+    """Return current motor amps, kW, live $/hr cost, TOU period, and shift.
 
-    amps  = values.get("motor_amps")
-    state = state_engine.classify_state(
-        process=bool(values.get("process") or False),
-        cip=bool(values.get("cip") or False),
-        running=bool(values.get("running") or False),
-    )
-    tou_period = cost_calculator.get_tou_period(now)
-    tou_rate   = cost_calculator.get_tou_rate(now)
-    shift      = cost_calculator.get_shift(now)
-    return cost_calculator.current_cost(amps, state, tou_period=tou_period, tou_rate=tou_rate, shift=shift)
+    Reads from the in-memory LatestState populated by the processing loop —
+    no historian round-trip on the request path.
+    """
+    return processing.current_metrics()
 
 
 # ---------------------------------------------------------------------------
@@ -107,7 +108,7 @@ async def get_raw(hours: int = Query(default=1, ge=1, le=168)):
     """
     now   = datetime.now(timezone.utc)
     start = now - timedelta(hours=hours)
-    raw   = await timebase_client.fetch_all_tags(start=start, end=now)
+    raw   = await historian_client.fetch_all_tags(start=start, end=now)
 
     result = []
     for alias, points in raw.items():

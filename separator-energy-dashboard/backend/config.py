@@ -7,26 +7,61 @@
 # =============================================================================
 
 import os
+
 from dotenv import load_dotenv
 
 load_dotenv()  # loads .env file if present (no-op in Docker if vars set directly)
 
-# --- TimeBase Historian Connection -------------------------------------------
-TIMEBASE_HOST     = os.getenv("TIMEBASE_HOST", "192.254.155.2")
-TIMEBASE_PORT     = int(os.getenv("TIMEBASE_PORT", "4511"))
-TIMEBASE_BASE_URL = f"http://{TIMEBASE_HOST}:{TIMEBASE_PORT}"
-TIMEBASE_DATASET  = os.getenv("TIMEBASE_DATASET", "Driftwood Historian")
+# --- i3X Consumer Connection --------------------------------------------------
+# Default ON — i3X is the supported path. Set USE_I3X=false to fall back to
+# the legacy REST client during commissioning rollback only. Both clients
+# resolve to the same physical tags via I3X_TAGS, so the flip is non-destructive.
+USE_I3X = os.getenv("USE_I3X", "true").strip().lower() in {"1", "true", "yes", "on"}
+I3X_BASE_URL = os.getenv(
+    "I3X_BASE_URL",
+    f"http://{os.getenv('TIMEBASE_HOST', '192.254.155.2')}:{os.getenv('TIMEBASE_PORT', '4511')}",
+).rstrip("/")
+I3X_DATASET = os.getenv("I3X_DATASET", os.getenv("TIMEBASE_DATASET", "Driftwood Historian"))
+I3X_SEPARATOR_BASE_PATH = os.getenv(
+    "I3X_SEPARATOR_BASE_PATH",
+    "Driftwood Dairy/El Monte CA/Raw Side/Seperator/1/Edge",
+)
+I3X_TAG_MOTOR_AMPS = os.getenv("I3X_TAG_MOTOR_AMPS", "Motor Amps")
+I3X_TAG_RUNNING = os.getenv("I3X_TAG_RUNNING", "Running")
+I3X_TAG_CIP = os.getenv("I3X_TAG_CIP", "CIP")
+I3X_TAG_PROCESS = os.getenv("I3X_TAG_PROCESS", "Process")
+I3X_TIMEOUT_SECONDS = float(os.getenv("I3X_TIMEOUT_SECONDS", "10"))
+
+
+def _i3x_element_id(tag_name: str) -> str:
+    return f"{I3X_DATASET}:{I3X_SEPARATOR_BASE_PATH}/{tag_name}"
+
+
+I3X_TAGS = {
+    "motor_amps": _i3x_element_id(I3X_TAG_MOTOR_AMPS),
+    "running": _i3x_element_id(I3X_TAG_RUNNING),
+    "cip": _i3x_element_id(I3X_TAG_CIP),
+    "process": _i3x_element_id(I3X_TAG_PROCESS),
+}
+
+# Deprecated aliases retained for legacy fallback compatibility
+TIMEBASE_BASE_URL = I3X_BASE_URL
+TIMEBASE_DATASET = I3X_DATASET
 
 # --- UNS Tag Paths (as stored in TimeBase) -----------------------------------
-_BASE = os.getenv("TAG_BASE_PATH", "Driftwood Dairy/El Monte CA/Raw Side/Seperator/1/Edge")
-_PV   = f"{_BASE}/Process Values"
+# Legacy REST tagnames are derived from the same i3X element IDs by stripping
+# the "{dataset}:" prefix. This guarantees both clients query the same physical
+# tags, so flipping USE_I3X for rollback can't silently dim the dashboard.
+#
+# Phase 0 §2.3 captured all four tags as direct children of /Edge — there is
+# no /Process Values subfolder on this historian. If a future deployment
+# diverges, override I3X_SEPARATOR_BASE_PATH (and the per-tag I3X_TAG_* vars)
+# rather than reintroducing a separate TAGS dict.
+def _strip_dataset_prefix(eid: str) -> str:
+    return eid.split(":", 1)[1] if ":" in eid else eid
 
-TAGS = {
-    "motor_amps":  f"{_BASE}/Motor Amps",
-    "running":     f"{_PV}/Running",
-    "cip":         f"{_PV}/CIP",
-    "process":     f"{_PV}/Process",
-}
+
+TAGS = {alias: _strip_dataset_prefix(eid) for alias, eid in I3X_TAGS.items()}
 
 # --- Electrical Parameters ---------------------------------------------------
 VOLTAGE      = int(os.getenv("VOLTAGE", "460"))           # Volts, 3-phase
@@ -71,6 +106,11 @@ TOU_RATES = {
 
 # --- Analysis Window ---------------------------------------------------------
 LOOKBACK_DAYS = int(os.getenv("LOOKBACK_DAYS", "7"))
+
+# --- Continuous processing service (Phase 2) ---------------------------------
+PROCESSING_INTERVAL_SECONDS = float(os.getenv("PROCESSING_INTERVAL_SECONDS", "5"))
+PROCESSING_BUFFER_MINUTES = int(os.getenv("PROCESSING_BUFFER_MINUTES", "1440"))
+STALE_THRESHOLD_SECONDS = float(os.getenv("STALE_THRESHOLD_SECONDS", "60"))
 
 # --- Data Quality Thresholds -------------------------------------------------
 MIN_GOOD_QUALITY  = int(os.getenv("MIN_GOOD_QUALITY", "192"))

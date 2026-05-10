@@ -25,15 +25,31 @@ services:
         max-size: "50m"
         max-file: "5"
     environment:
+      # --- i3X consumer (off by default — flip to true after smoke test) ---
+      - USE_I3X=false
+      - I3X_BASE_URL=http://192.254.155.2:4511
+      - I3X_DATASET=Driftwood Historian
+      - I3X_SEPARATOR_BASE_PATH=Driftwood Dairy/El Monte CA/Raw Side/Seperator/1/Edge
+      - I3X_TAG_MOTOR_AMPS=Motor Amps
+      - I3X_TAG_RUNNING=Running
+      - I3X_TAG_CIP=CIP
+      - I3X_TAG_PROCESS=Process
+      - I3X_TIMEOUT_SECONDS=10
+      # --- Legacy fallback (used when USE_I3X=false) ---
       - TIMEBASE_HOST=192.254.155.2
       - TIMEBASE_PORT=4511
       - TIMEBASE_DATASET=Driftwood Historian
+      - MIN_GOOD_QUALITY=192
+      # --- Continuous processing service (Phase 2) ---
+      - PROCESSING_INTERVAL_SECONDS=5
+      - PROCESSING_BUFFER_MINUTES=1440
+      - STALE_THRESHOLD_SECONDS=60
+      # --- App ---
       - FACILITY_TIMEZONE=US/Pacific
       - DEFAULT_RATE_PER_KWH=0.30
       - VOLTAGE=460
       - POWER_FACTOR=0.88
       - LOOKBACK_DAYS=7
-      - MIN_GOOD_QUALITY=192
       - TOU_SUMMER_ON_PEAK=0.38
       - TOU_SUMMER_MID_PEAK=0.28
       - TOU_SUMMER_OFF_PEAK=0.18
