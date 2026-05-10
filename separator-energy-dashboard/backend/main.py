@@ -21,6 +21,7 @@ from fastapi.staticfiles import StaticFiles
 load_dotenv()
 
 from config import I3X_BASE_URL, USE_I3X
+from i3x_server.routes import router as i3x_producer_router
 from routers.energy import router as energy_router
 from services import analytics, historian_client, processing
 
@@ -104,6 +105,7 @@ app.add_middleware(
 # API Routes (must be registered BEFORE the static file catch-all)
 # ---------------------------------------------------------------------------
 app.include_router(energy_router)
+app.include_router(i3x_producer_router)
 
 
 @app.get("/health")
