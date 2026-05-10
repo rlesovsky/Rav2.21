@@ -49,8 +49,14 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Verify images
-        run: docker images separator-backend separator-frontend
+      - name: Verify images loaded into daemon
+        run: |
+          # `docker images repo1 repo2` only accepts one positional arg and
+          # exits 1 with a usage error. Use `image inspect` per image — it
+          # fails loudly (non-zero exit) if either image is missing, which is
+          # the exact verification semantic we want.
+          docker image inspect separator-backend:latest --format '{{.Id}} ({{.Architecture}}/{{.Os}}, size={{.Size}})'
+          docker image inspect separator-frontend:latest --format '{{.Id}} ({{.Architecture}}/{{.Os}}, size={{.Size}})'
 
       - name: Export to tar
         run: |
