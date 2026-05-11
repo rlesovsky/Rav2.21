@@ -59,7 +59,7 @@ Single FastAPI process, single Docker container. Dashboard consumes its own `/ap
 
 - **Live tab:** 7 mini cards (Operating state + Amps/kW/$ per hr/TOU period/TOU rate/Shift) above a 24-hour state distribution and a full-height Power draw area chart
 - **Analysis tab:** window selector (7d / 30d), 5 KPI cards with week-over-week deltas (cost, energy, avg $/hr, processing %, peak hours cost %), donut + stacked bars + daily breakdown
-- Pure black background, hairline-bordered cards (MaestroHub-inspired), tabular nums
+- Pure black background, hairline-bordered cards
 - Auto-polls live data every 5s; relative "Updated Xs ago" timestamps
 
 ### Backend — FastAPI on Python 3.11
