@@ -64,7 +64,7 @@ async def index() -> dict:
     return {
         "message":     "Rav2.21 i3X server. Use the endpoints below or point an i3X-aware client (e.g. ACE Explorer) at this base URL.",
         "specVersion": "1.0",
-        "serverName":  "Rav2.21 — Driftwood Separator Energy",
+        "serverName":  "Rav2.21 - Driftwood Separator Energy",
         "endpoints": {
             "info":              "GET  /api/i3x/v1/info",
             "namespaces":        "GET  /api/i3x/v1/namespaces",
@@ -87,7 +87,7 @@ async def get_info() -> dict:
     return envelope.unary_success({
         "specVersion":   "1.0",
         "serverVersion": "beta",
-        "serverName":    "Rav2.21 — Driftwood Separator Energy",
+        "serverName":    "Rav2.21 - Driftwood Separator Energy",
         "capabilities": {
             "query":     {"history": True},
             "update":    {"current": False, "history": False},
