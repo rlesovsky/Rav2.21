@@ -67,6 +67,7 @@ OBJECT_TYPES = [
 
 # --- Relationship types -----------------------------------------------------
 REL_HAS_COMPONENT = "HasComponent"
+REL_HAS_PARENT = "HasParent"
 
 RELATIONSHIP_TYPES = [
     {
@@ -74,6 +75,12 @@ RELATIONSHIP_TYPES = [
         "displayName":   "HasComponent",
         "namespaceUri":  NAMESPACE_URI,
         "description":   "Parent has a child component (folder contains tag, etc.)",
+    },
+    {
+        "elementId":     REL_HAS_PARENT,
+        "displayName":   "HasParent",
+        "namespaceUri":  NAMESPACE_URI,
+        "description":   "Child references its parent (inverse of HasComponent)",
     },
 ]
 

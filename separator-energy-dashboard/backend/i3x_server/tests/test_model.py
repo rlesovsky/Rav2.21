@@ -9,7 +9,7 @@ class CatalogShapeTests(TestCase):
     def test_counts(self) -> None:
         self.assertEqual(len(model.NAMESPACES), 1)
         self.assertEqual(len(model.OBJECT_TYPES), 2)
-        self.assertEqual(len(model.RELATIONSHIP_TYPES), 1)
+        self.assertEqual(len(model.RELATIONSHIP_TYPES), 2)  # HasComponent + HasParent
         self.assertEqual(len(model.FOLDERS), 3)
         self.assertEqual(len(model.TAGS), 9)
         self.assertEqual(len(model.ALL_OBJECTS), 12)

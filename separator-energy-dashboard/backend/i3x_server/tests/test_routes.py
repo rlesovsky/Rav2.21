@@ -89,14 +89,38 @@ class ObjectsTests(TestCase):
             r = c.post("/api/i3x/v1/objects/list", json={"elementIds": []})
         self.assertEqual(r.status_code, 422)
 
-    def test_objects_related_returns_children(self) -> None:
+    def test_objects_related_returns_parent_and_children(self) -> None:
+        """Reference shape: per-element result is a list of
+        {sourceRelationship, object} items — parent (HasParent) and each
+        child (HasComponent). For separator-1 that's 1 parent + 9 tags = 10."""
         with _client() as c:
             r = c.post("/api/i3x/v1/objects/related",
-                       json={"elementId": "separator-1"})
+                       json={"elementIds": ["separator-1"]})
         body = r.json()
         self.assertTrue(body["success"])
-        related = body["results"][0]["result"]["related"]
-        self.assertEqual(len(related), 9)  # 9 tags hang off separator-1
+        related = body["results"][0]["result"]
+        self.assertEqual(len(related), 10)
+        kinds = [item["sourceRelationship"] for item in related]
+        self.assertEqual(kinds.count("HasParent"), 1)
+        self.assertEqual(kinds.count("HasComponent"), 9)
+
+    def test_objects_related_includes_metadata_when_requested(self) -> None:
+        with _client() as c:
+            r = c.post("/api/i3x/v1/objects/related",
+                       json={"elementIds": ["separator-1-kw"], "includeMetadata": True})
+        related = r.json()["results"][0]["result"]
+        # Each related object should now carry a metadata block.
+        for item in related:
+            self.assertIn("metadata", item["object"])
+            self.assertIn("typeNamespaceUri", item["object"]["metadata"])
+
+    def test_objects_related_unknown_id_per_element_error(self) -> None:
+        with _client() as c:
+            r = c.post("/api/i3x/v1/objects/related",
+                       json={"elementIds": ["does-not-exist"]})
+        item = r.json()["results"][0]
+        self.assertFalse(item["success"])
+        self.assertEqual(item["error"]["code"], "NotFound")
 
 
 class ValueTests(TestCase):

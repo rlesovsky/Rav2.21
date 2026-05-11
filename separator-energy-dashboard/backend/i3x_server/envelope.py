@@ -44,6 +44,26 @@ def per_element_error(element_id: str, code: str, message: str) -> dict:
     }
 
 
+# /objects/related has a SLIGHTLY different per-element shape than /value
+# and /history — no `subscriptionId` or `error` keys on the success path
+# (verified against api.i3x.dev/v1). Keep the helpers separate so the
+# wire shape stays exact.
+def per_element_related_success(element_id: str, related: list[dict]) -> dict:
+    return {
+        "success":   True,
+        "elementId": element_id,
+        "result":    related,
+    }
+
+
+def per_element_related_error(element_id: str, code: str, message: str) -> dict:
+    return {
+        "success":   False,
+        "elementId": element_id,
+        "error":     {"code": code, "message": message},
+    }
+
+
 # --- Value / history record shapes ----------------------------------------
 def vqt(value: Any, quality: str, timestamp: datetime) -> dict:
     """Reference VQT: value-quality-timestamp record. Includes the
