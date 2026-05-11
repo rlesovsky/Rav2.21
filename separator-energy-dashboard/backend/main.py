@@ -93,9 +93,16 @@ CORS_ORIGINS = [
     o.strip() for o in os.getenv("CORS_ORIGINS", _default_origins).split(",") if o.strip()
 ]
 
+# `allow_origins` covers production hostnames specified via CORS_ORIGINS.
+# `allow_origin_regex` additionally allows ANY localhost / 127.0.0.1 port so
+# i3X-aware browser tools (ACE Explorer, MCP clients, etc.) running on
+# arbitrary dev ports can hit the API without us having to enumerate every
+# possible port. Tighten this for production by setting CORS_ORIGINS
+# explicitly and removing the regex if needed.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

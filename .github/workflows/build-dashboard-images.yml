@@ -1,12 +1,20 @@
-# Build Separator Dashboard Docker images and export as .tar for Portainer.
+# Build the single-container Separator Dashboard image and export as .tar
+# for Portainer.
 #
-# Builds two split images (separator-backend, separator-frontend) directly
-# from their per-service Dockerfiles — NOT via `docker compose build`. The
-# compose files reference pre-built images and don't carry `build:`
-# directives, so `compose build` would have nothing to do.
+# Production runs the single-image deploy (FastAPI serves both the API and
+# the React frontend on port 3030). The image name + tag in this workflow
+# matches `image: separator-dashboard:v2.21` in docker-compose.yml.
 #
 # Manual run: Actions → Build dashboard images → Run workflow
-# Artifact:   separator-dashboard-images.tar (load with `docker load -i`)
+# Artifact:   separator-dashboard-v2.21.tar (~150 MB)
+#
+# Deployment recipe (after this workflow finishes green):
+#   gh run download <run-id> --name separator-dashboard
+#   scp separator-dashboard-v2.21.tar user@server:/tmp/
+#   # On the server:
+#   docker load -i /tmp/separator-dashboard-v2.21.tar
+#   # Then redeploy via Portainer or:
+#   #   docker compose -f docker-compose.yml up -d
 
 name: Build dashboard images
 
@@ -27,48 +35,41 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build backend image
+      - name: Build single-container image
         uses: docker/build-push-action@v5
         with:
-          context: separator-energy-dashboard/backend
-          file: separator-energy-dashboard/backend/Dockerfile
-          tags: separator-backend:latest
+          # The top-level Dockerfile builds React (Node stage) then bundles
+          # it into the FastAPI image (Python stage), serving everything from
+          # /app on port 3030. Build context must be the dashboard root so
+          # the Dockerfile can `COPY frontend/...` and `COPY backend/...`.
+          context: separator-energy-dashboard
+          file: separator-energy-dashboard/Dockerfile
+          platforms: linux/amd64
+          tags: |
+            separator-dashboard:v2.21
+            separator-dashboard:latest
           load: true                # Keep in the runner's local daemon for `docker save`
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Build frontend image
-        uses: docker/build-push-action@v5
-        with:
-          context: separator-energy-dashboard/frontend
-          file: separator-energy-dashboard/frontend/Dockerfile
-          tags: separator-frontend:latest
-          load: true
-          push: false
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Verify images loaded into daemon
+      - name: Verify image loaded into daemon
         run: |
-          # `docker images repo1 repo2` only accepts one positional arg and
-          # exits 1 with a usage error. Use `image inspect` per image — it
-          # fails loudly (non-zero exit) if either image is missing, which is
-          # the exact verification semantic we want.
-          docker image inspect separator-backend:latest --format '{{.Id}} ({{.Architecture}}/{{.Os}}, size={{.Size}})'
-          docker image inspect separator-frontend:latest --format '{{.Id}} ({{.Architecture}}/{{.Os}}, size={{.Size}})'
+          docker image inspect separator-dashboard:v2.21 \
+            --format '{{.Id}} ({{.Architecture}}/{{.Os}}, size={{.Size}})'
 
       - name: Export to tar
         run: |
           cd separator-energy-dashboard
-          docker save -o separator-dashboard-images.tar \
-            separator-backend:latest \
-            separator-frontend:latest
-          ls -lh separator-dashboard-images.tar
+          # Save the image with both tags so consumers can reference either.
+          docker save -o separator-dashboard-v2.21.tar \
+            separator-dashboard:v2.21 \
+            separator-dashboard:latest
+          ls -lh separator-dashboard-v2.21.tar
 
       - name: Upload tar artifact
         uses: actions/upload-artifact@v4
         with:
-          name: separator-dashboard-images
-          path: separator-energy-dashboard/separator-dashboard-images.tar
+          name: separator-dashboard
+          path: separator-energy-dashboard/separator-dashboard-v2.21.tar
           retention-days: 30

@@ -49,8 +49,43 @@ class HistoryBody(ElementIdsBody):
 
 
 class RelatedBody(BaseModel):
-    elementId: str
+    elementIds: list[str] = Field(..., min_length=1)
     relationshipType: Optional[str] = None
+    includeMetadata: bool = False
+
+    @field_validator("elementIds")
+    @classmethod
+    def _non_empty(cls, v: list[str]) -> list[str]:
+        if not v:
+            raise ValueError("'elementIds' must contain at least one element")
+        return v
+
+
+# --- Landing page (not in spec, UX nicety) ---------------------------------
+# A bare GET on /api/i3x/v1 returns a small map of available endpoints, so
+# anyone curling/browsing the prefix gets something useful instead of 404.
+# i3X-aware clients (ACE Explorer, MCP tools) ignore this and call /info
+# directly per spec.
+@router.get("")
+@router.get("/")
+async def index() -> dict:
+    return {
+        "message":     "Rav2.21 i3X server. Use the endpoints below or point an i3X-aware client (e.g. ACE Explorer) at this base URL.",
+        "specVersion": "1.0",
+        "serverName":  "Rav2.21 - Driftwood Separator Energy",
+        "endpoints": {
+            "info":              "GET  /api/i3x/v1/info",
+            "namespaces":        "GET  /api/i3x/v1/namespaces",
+            "objecttypes":       "GET  /api/i3x/v1/objecttypes",
+            "relationshiptypes": "GET  /api/i3x/v1/relationshiptypes",
+            "objects":           "GET  /api/i3x/v1/objects",
+            "objects_list":      "POST /api/i3x/v1/objects/list      body={elementIds:[...]}",
+            "objects_related":   "POST /api/i3x/v1/objects/related   body={elementId, relationshipType?}",
+            "objects_value":     "POST /api/i3x/v1/objects/value     body={elementIds:[...]}",
+            "objects_history":   "POST /api/i3x/v1/objects/history   body={elementIds:[...], startTime, endTime}",
+        },
+        "explorer": "https://github.com/cesmii/i3X-explorer",
+    }
 
 
 # --- /info ------------------------------------------------------------------
@@ -60,7 +95,7 @@ async def get_info() -> dict:
     return envelope.unary_success({
         "specVersion":   "1.0",
         "serverVersion": "beta",
-        "serverName":    "Rav2.21 — Driftwood Separator Energy",
+        "serverName":    "Rav2.21 - Driftwood Separator Energy",
         "capabilities": {
             "query":     {"history": True},
             "update":    {"current": False, "history": False},
@@ -123,31 +158,65 @@ async def list_objects(body: ElementIdsBody) -> dict:
 
 @router.post("/objects/related")
 async def get_related(body: RelatedBody) -> dict:
-    """Return objects related to the given elementId.
+    """Return objects related to each requested elementId.
 
-    For HasComponent (the only relationship we publish), this is the
-    parent's children. If a relationshipType is provided and we don't
-    publish it, return an empty list rather than an error — matches
-    reference server tolerance."""
-    if model.get_object(body.elementId) is None:
-        return envelope.bulk_success([
-            envelope.per_element_error(body.elementId, "NotFound", "elementId not found"),
-        ])
+    Per-element result is an array of {sourceRelationship, object} items
+    (matches api.i3x.dev/v1 shape). Relationships emitted:
+    - HasParent: the parent object (one item, only if parentId is non-null)
+    - HasComponent: each child object (zero-or-more items)
 
-    if body.relationshipType not in (None, model.REL_HAS_COMPONENT):
-        # Unknown relationship — return empty success
-        return envelope.bulk_success([
-            envelope.per_element_success(body.elementId, {"related": []}),
-        ])
+    relationshipType filter: if set, only that relationship is included.
+    includeMetadata: when true, each object also carries a `metadata`
+    block (typeNamespaceUri, sourceTypeId, description if any).
+    """
+    items = []
+    for eid in body.elementIds:
+        if model.get_object(eid) is None:
+            items.append(envelope.per_element_related_error(
+                eid, "NotFound", "elementId not found"))
+            continue
 
-    child_ids = model.get_children(body.elementId)
-    related = [
-        model.public_object_instance(model.ELEMENT_LOOKUP[cid])
-        for cid in child_ids
-    ]
-    return envelope.bulk_success([
-        envelope.per_element_success(body.elementId, {"related": related}),
-    ])
+        related: list[dict] = []
+        obj = model.ELEMENT_LOOKUP[eid]
+
+        # HasParent (one entry if it has a parent)
+        if body.relationshipType in (None, model.REL_HAS_PARENT):
+            parent_id = obj.get("parentId")
+            if parent_id and parent_id in model.ELEMENT_LOOKUP:
+                related.append({
+                    "sourceRelationship": model.REL_HAS_PARENT,
+                    "object": _project_object(model.ELEMENT_LOOKUP[parent_id], body.includeMetadata),
+                })
+
+        # HasComponent (each child)
+        if body.relationshipType in (None, model.REL_HAS_COMPONENT):
+            for cid in model.get_children(eid):
+                related.append({
+                    "sourceRelationship": model.REL_HAS_COMPONENT,
+                    "object": _project_object(model.ELEMENT_LOOKUP[cid], body.includeMetadata),
+                })
+
+        items.append(envelope.per_element_related_success(eid, related))
+
+    return envelope.bulk_success(items)
+
+
+def _project_object(obj: dict, include_metadata: bool) -> dict:
+    """Public ObjectInstance, optionally with a metadata block."""
+    public = model.public_object_instance(obj)
+    if not include_metadata:
+        return public
+    type_id = obj.get("typeElementId")
+    type_def = next(
+        (t for t in model.OBJECT_TYPES if t["elementId"] == type_id), None
+    )
+    metadata = {}
+    if type_def is not None:
+        metadata["typeNamespaceUri"] = type_def.get("namespaceUri")
+        metadata["sourceTypeId"] = type_def.get("sourceTypeId")
+    if obj.get("description"):
+        metadata["description"] = obj["description"]
+    return {**public, "metadata": metadata}
 
 
 # --- /objects/value ---------------------------------------------------------
