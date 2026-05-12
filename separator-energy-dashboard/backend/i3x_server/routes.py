@@ -136,10 +136,15 @@ async def query_relationshiptypes() -> dict:
 
 # --- /objects (browse + lookup + related) ----------------------------------
 @router.get("/objects")
-async def get_objects() -> dict:
-    """Full catalog — every folder + tag in the published tree."""
+async def get_objects(root: bool = False) -> dict:
+    """Full catalog; ?root=true returns only parentId=null objects so i3X
+    Explorer's Hierarchy tab gets a single root instead of one per folder."""
+    if root:
+        objects = [obj for obj in model.ALL_OBJECTS if obj["parentId"] is None]
+    else:
+        objects = model.ALL_OBJECTS
     return envelope.unary_success([
-        model.public_object_instance(obj) for obj in model.ALL_OBJECTS
+        model.public_object_instance(obj) for obj in objects
     ])
 
 
