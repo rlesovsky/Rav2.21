@@ -20,10 +20,10 @@ from fastapi.staticfiles import StaticFiles
 
 load_dotenv()
 
-from config import I3X_BASE_URL, USE_I3X
+from config import I3X_BASE_URL, UNS_PUBLISH_ENABLED, USE_I3X
 from i3x_server.routes import router as i3x_producer_router
 from routers.energy import router as energy_router
-from services import analytics, historian_client, processing
+from services import analytics, historian_client, processing, uns_publisher
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -44,21 +44,28 @@ STATIC_DIR = Path(__file__).parent / "static"
 
 
 # ---------------------------------------------------------------------------
-# Lifespan — historian client and processing loop
+# Lifespan — historian client, processing loop, UNS MQTT publisher
 #
-# Order on startup:   historian_client.startup() -> processing.start()
-# Order on shutdown:  processing.stop()          -> historian_client.shutdown()
+# Order on startup:
+#   historian_client.startup() -> processing.start() -> uns_publisher.start()
+# Order on shutdown (reverse):
+#   uns_publisher.stop() -> processing.stop() -> historian_client.shutdown()
 #
-# Reverse order on shutdown ensures the processing loop has stopped before
-# we close the httpx client it depends on; otherwise a tick mid-shutdown
-# would log spurious connection errors.
+# Reverse order on shutdown ensures each layer stops before the layer it
+# depends on tears down: uns_publisher reads from processing.LatestState,
+# and processing reads via historian_client's httpx session.
+#
+# uns_publisher is gated on UNS_PUBLISH_ENABLED — ships off by default so
+# code can deploy dark; flip the env var after the smoke test in
+# docs/phase3a-uns-publisher.md.
 # ---------------------------------------------------------------------------
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info(
-        "Starting Separator Energy Dashboard (USE_I3X=%s, i3x_base_url=%s)",
+        "Starting Separator Energy Dashboard (USE_I3X=%s, i3x_base_url=%s, UNS_PUBLISH_ENABLED=%s)",
         USE_I3X,
         I3X_BASE_URL if USE_I3X else "n/a",
+        UNS_PUBLISH_ENABLED,
     )
     try:
         await historian_client.startup()
@@ -67,10 +74,14 @@ async def lifespan(app: FastAPI):
         raise
     await processing.start()
     await analytics.start_prewarm()
+    if UNS_PUBLISH_ENABLED:
+        await uns_publisher.start()
 
     yield
 
-    logger.info("Shutting down — stopping prewarm + processing, closing historian client")
+    logger.info("Shutting down — stopping publisher + prewarm + processing, closing historian client")
+    if UNS_PUBLISH_ENABLED:
+        await uns_publisher.stop()
     await analytics.stop_prewarm()
     await processing.stop()
     await historian_client.shutdown()
