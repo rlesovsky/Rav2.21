@@ -53,7 +53,20 @@ class ObjectsTests(TestCase):
             r = c.get("/api/i3x/v1/objects")
         body = r.json()
         self.assertTrue(body["success"])
-        self.assertEqual(len(body["result"]), 12)
+        # 7 folders + 9 tags = 16
+        self.assertEqual(len(body["result"]), 16)
+
+    def test_get_objects_root_true_returns_only_top_level(self) -> None:
+        # Spec: GET /objects?root=true returns roots (parentId=None) only.
+        # Without this, i3X Explorer's Hierarchy tab shows every folder
+        # as a duplicate root.
+        with _client() as c:
+            r = c.get("/api/i3x/v1/objects?root=true")
+        body = r.json()
+        self.assertTrue(body["success"])
+        self.assertEqual(len(body["result"]), 1)
+        self.assertEqual(body["result"][0]["elementId"], "driftwood-dairy")
+        self.assertIsNone(body["result"][0]["parentId"])
         # ObjectInstance shape: only public fields, NO typeId / hasChildren / namespaceUri.
         first = body["result"][0]
         self.assertIn("typeElementId", first)
@@ -92,17 +105,18 @@ class ObjectsTests(TestCase):
     def test_objects_related_returns_parent_and_children(self) -> None:
         """Reference shape: per-element result is a list of
         {sourceRelationship, object} items — parent (HasParent) and each
-        child (HasComponent). For separator-1 that's 1 parent + 9 tags = 10."""
+        child (HasComponent). For separator-1 that's 1 parent + 2 subfolders
+        (Edge, Energy) = 3."""
         with _client() as c:
             r = c.post("/api/i3x/v1/objects/related",
                        json={"elementIds": ["separator-1"]})
         body = r.json()
         self.assertTrue(body["success"])
         related = body["results"][0]["result"]
-        self.assertEqual(len(related), 10)
+        self.assertEqual(len(related), 3)
         kinds = [item["sourceRelationship"] for item in related]
         self.assertEqual(kinds.count("HasParent"), 1)
-        self.assertEqual(kinds.count("HasComponent"), 9)
+        self.assertEqual(kinds.count("HasComponent"), 2)
 
     def test_objects_related_includes_metadata_when_requested(self) -> None:
         with _client() as c:
