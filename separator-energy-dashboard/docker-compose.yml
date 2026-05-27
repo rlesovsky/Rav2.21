@@ -69,12 +69,13 @@ services:
       - TOU_WINTER_OFF_PEAK=0.22
       - TOU_WINTER_SUPER_OFF_PEAK=0.16
 
-      # --- UNS MQTT publisher (Phase 3a, off by default) ---
-      # When true: publishes derived energy KPIs to the EMQX broker under
+      # --- UNS MQTT publisher (Phase 3a, enabled by default) ---
+      # Publishes derived energy KPIs to the EMQX broker under
       # UNS_PUBLISH_BASE_TOPIC. See docs/phase3a-uns-publisher.md for the
       # wire-format contract and smoke test. Auth empty = open broker
       # inside the infrastructure network (matches historian at .2:4511).
-      - UNS_PUBLISH_ENABLED=false
+      # Set UNS_PUBLISH_ENABLED=false to disable for rollback.
+      - UNS_PUBLISH_ENABLED=true
       - UNS_MQTT_HOST=192.254.155.2
       - UNS_MQTT_PORT=1883
       - UNS_MQTT_CLIENT_ID=rav221-separator-energy
