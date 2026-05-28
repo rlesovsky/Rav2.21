@@ -50,7 +50,16 @@ async def fetch_tag_history(
         tl = payload.get("tl", [])
         raw_points = tl[0]["d"] if tl else []
 
-        good_points = [p for p in raw_points if p.get("q", 0) >= MIN_GOOD_QUALITY]
+        # TimeBase occasionally returns good-quality points that carry only a
+        # timestamp (boundary / no-data markers) with no "v" key. The contract
+        # the rest of the app expects is {t, v, q}; a point missing "t" or "v"
+        # is unusable and previously crashed state_engine with KeyError: 'v'.
+        quality_ok = [
+            p for p in raw_points
+            if isinstance(p, dict) and p.get("q", 0) >= MIN_GOOD_QUALITY
+        ]
+        good_points = [p for p in quality_ok if "t" in p and "v" in p]
+        dropped = len(quality_ok) - len(good_points)
 
         logger.info(
             "TimeBase legacy: tag=%s total=%d good=%d window=%s->%s",
@@ -60,6 +69,12 @@ async def fetch_tag_history(
             params["start"],
             params["end"],
         )
+        if dropped:
+            logger.warning(
+                "TimeBase legacy: tag=%s dropped %d good-quality point(s) missing t/v",
+                tag_path.split("/")[-1],
+                dropped,
+            )
         return good_points
     except httpx.HTTPStatusError as exc:
         logger.error(
