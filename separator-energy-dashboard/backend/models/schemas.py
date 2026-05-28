@@ -28,6 +28,10 @@ class EnergySummary(BaseModel):
     total_kwh:      float
     by_state:       dict[str, StateMetrics]
     by_shift:       dict[str, ShiftMetrics]
+    # Set when the aggregation could not be computed (sparse/missing data,
+    # historian fault, etc). When present, numeric fields are zeros and the
+    # UI should render a neutral "insufficient data" note rather than an error.
+    warning:        Optional[str] = None
 
 
 class DailyStateMetrics(BaseModel):
@@ -66,6 +70,9 @@ class CurrentMetrics(BaseModel):
     tou_period:    str
     tou_rate:      float
     shift:         str
+    cost_today:    Optional[float] = None
+    last_updated:  Optional[str]   = None
+    is_stale:      bool            = False
 
 
 class EnergyConfig(BaseModel):

@@ -12,11 +12,44 @@
 import logging
 from datetime import datetime
 
+import numpy as np
 import pandas as pd
 
-from config import TAGS
-
 logger = logging.getLogger(__name__)
+
+_BOOL_TAGS = ("running", "cip", "process")
+_TRUTHY_STRINGS = frozenset({"1", "true", "t", "on", "yes", "y"})
+_FALSY_STRINGS = frozenset({"0", "false", "f", "off", "no", "n"})
+
+
+def _coerce_bool(value: object) -> bool | None:
+    """Tolerant boolean coercion for historian values.
+
+    Booleans from i3X / Timebase arrive in any of: native bool, 0/1 ints, 0.0/1.0
+    floats, or "true"/"false" strings (case-insensitive). The previous
+    `bool(int(value))` form raised ValueError on the string form, which is the
+    root cause of the post-outage Analysis-tab 500s when a tag has been
+    written with the string representation.
+    """
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        if pd.isna(value):
+            return None
+        return bool(value)
+    if isinstance(value, str):
+        s = value.strip().lower()
+        if s in _TRUTHY_STRINGS:
+            return True
+        if s in _FALSY_STRINGS:
+            return False
+        return None
+    try:
+        return bool(value)
+    except Exception:
+        return None
 
 # State constants
 STATE_PROCESSING = "Processing"
@@ -101,28 +134,36 @@ def build_dataframe(raw: dict[str, list[dict]]) -> pd.DataFrame:
     df = pd.DataFrame(index=minute_index)
 
     for alias, s in series.items():
-        if s.empty:
-            df[alias] = None
-            continue
+        if alias in _BOOL_TAGS:
+            # Coerce values up front using the tolerant helper. The raw stream
+            # may contain native bools, 0/1 ints, or "true"/"false" strings —
+            # downstream code only handles bool/None safely.
+            if s.empty:
+                df[alias] = pd.Series([False] * len(minute_index), index=minute_index, dtype="boolean")
+                continue
 
-        s_reindexed = s.reindex(minute_index, method=None)
-
-        if alias in ("running", "cip", "process"):
-            # Boolean tags: stored on-change → forward-fill to propagate last known value
-            # Historian returns integer 1/0; cast explicitly for safety
-            s_reindexed = s.reindex(minute_index.union(s.index)).sort_index()
-            s_reindexed = s_reindexed.map(
-                lambda x: None if pd.isna(x) else bool(int(x))
-            )
+            coerced = s.map(_coerce_bool).astype("boolean")
+            # Forward-fill over the union of the tag's own timestamps and the
+            # minute grid, then reindex back to the grid. This propagates the
+            # last known value into otherwise-empty minute buckets. Casting
+            # up front avoids pandas' deprecated object-dtype ffill downcast.
+            s_reindexed = coerced.reindex(minute_index.union(coerced.index)).sort_index()
             s_reindexed = s_reindexed.ffill().reindex(minute_index)
-            df[alias] = s_reindexed.astype("boolean")
+            df[alias] = s_reindexed
         else:
-            # Analog tags: snap to nearest 1-min bucket, no interpolation
+            # Analog tags: snap to nearest 1-min bucket, no interpolation.
+            if s.empty:
+                df[alias] = None
+                continue
             s_reindexed = s.reindex(minute_index, method="nearest", tolerance=pd.Timedelta("30s"))
             df[alias] = s_reindexed
 
     # Drop rows where motor_amps is missing (no raw reading within 30s of that minute)
     df = df.dropna(subset=["motor_amps"])
+
+    if df.empty:
+        logger.info("state_engine: no motor_amps rows survived nearest-bucket join")
+        return df
 
     # Log suspect motor amp readings but let them pass through
     if (df["motor_amps"] > 100).any():
@@ -131,20 +172,25 @@ def build_dataframe(raw: dict[str, list[dict]]) -> pd.DataFrame:
             (df["motor_amps"] > 100).sum(),
         )
 
-    # Fill remaining NaN booleans with False (safe default)
-    for col in ("running", "cip", "process"):
-        if col in df.columns:
-            df[col] = df[col].fillna(False)
+    # Backfill any remaining NaN booleans with False (Shutdown is the safe default)
+    # and cast to plain numpy bool — eliminates BooleanDtype/pd.NA traps in apply().
+    for col in _BOOL_TAGS:
+        if col not in df.columns:
+            df[col] = False
+        df[col] = df[col].fillna(False).astype(bool)
 
-    # Classify state for each row
-    def _row_state(row) -> str:
-        return classify_state(
-            process=bool(int(row.get("process", False) or 0)),
-            cip=bool(int(row.get("cip", False) or 0)),
-            running=bool(int(row.get("running", False) or 0)),
-        )
-
-    df["state"] = df.apply(_row_state, axis=1)
+    # Vectorized state classification — equivalent to classify_state() row-wise
+    # but skips a slow Python apply over 10k+ rows and avoids any value that
+    # could trip the row-iteration with a `pd.NA or 0` short-circuit.
+    process = df["process"].to_numpy(dtype=bool)
+    cip     = df["cip"].to_numpy(dtype=bool)
+    running = df["running"].to_numpy(dtype=bool)
+    state = np.where(
+        process, STATE_PROCESSING,
+        np.where(cip, STATE_CIP,
+                 np.where(running, STATE_IDLE, STATE_SHUTDOWN))
+    )
+    df["state"] = state
 
     logger.info(
         "state_engine: built DataFrame rows=%d  state_counts=%s",

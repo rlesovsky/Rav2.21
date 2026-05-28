@@ -1,6 +1,17 @@
 # =============================================================================
 # routers/energy.py — FastAPI Route Handlers
 # =============================================================================
+#
+# Failure policy:
+#   The aggregation endpoints (/summary, /daily, /timeline) catch all
+#   exceptions and degrade gracefully: log the traceback and return an
+#   empty-shape 200 response. /summary additionally carries a `warning`
+#   string so the UI can render a neutral "insufficient data" note instead
+#   of a red error box. This was added after a power outage at Driftwood
+#   exposed a sparse-boolean code path in state_engine: every Analysis-tab
+#   panel returned HTTP 500 because one unhandled exception was bubbling up
+#   through the whole window.
+# =============================================================================
 
 import logging
 from datetime import datetime, timezone, timedelta
@@ -8,69 +19,102 @@ from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Query
 
 from models.schemas import (
-    EnergySummary, DailyRecord, TimelinePoint,
-    CurrentMetrics, EnergyConfig, RawDebugResponse,
+    EnergyConfig, RawDebugResponse,
 )
-from services import timebase_client, state_engine, cost_calculator
+from services import historian_client, state_engine, cost_calculator, processing
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api")
 
 
+def _empty_summary_with_warning(message: str) -> dict:
+    payload = cost_calculator._empty_summary()
+    payload["period"] = "Insufficient data"
+    payload["warning"] = message
+    return payload
+
+
 # ---------------------------------------------------------------------------
 # GET /api/energy/summary — 7-day totals by state
 # ---------------------------------------------------------------------------
-@router.get("/energy/summary", response_model=EnergySummary)
+@router.get("/energy/summary")
 async def get_summary():
-    """Return total 7-day energy cost and kWh broken down by operating state."""
-    raw = await timebase_client.fetch_all_tags()
-    df  = state_engine.build_dataframe(raw)
-    return cost_calculator.aggregate_summary(df)
+    """Return total 7-day energy cost and kWh broken down by operating state.
+
+    On any failure or empty dataset, returns the empty-summary shape with a
+    `warning` string set, status 200. Frontend treats this as a soft state.
+    """
+    try:
+        raw = await historian_client.fetch_all_tags()
+        df  = state_engine.build_dataframe(raw)
+        if df.empty:
+            return _empty_summary_with_warning("No data in the last 7 days")
+        return cost_calculator.aggregate_summary(df)
+    except Exception:
+        logger.exception("summary aggregation failed")
+        return _empty_summary_with_warning("Could not compute summary — see backend logs")
 
 
 # ---------------------------------------------------------------------------
 # GET /api/energy/daily — per-day breakdown
 # ---------------------------------------------------------------------------
-@router.get("/energy/daily", response_model=list[DailyRecord])
+@router.get("/energy/daily")
 async def get_daily():
-    """Return daily energy cost segmented by state for the last 7 days."""
-    raw = await timebase_client.fetch_all_tags()
-    df  = state_engine.build_dataframe(raw)
-    return cost_calculator.aggregate_daily(df)
+    """Return daily energy cost segmented by state for the last 7 days.
+
+    On any failure or empty dataset, returns an empty list, status 200.
+    """
+    try:
+        raw = await historian_client.fetch_all_tags()
+        df  = state_engine.build_dataframe(raw)
+        if df.empty:
+            return []
+        return cost_calculator.aggregate_daily(df)
+    except Exception:
+        logger.exception("daily aggregation failed")
+        return []
 
 
 # ---------------------------------------------------------------------------
-# GET /api/energy/timeline — last 24-hr minute-by-minute
+# GET /api/energy/timeline — last 24-hr minute-by-minute (from ring buffer)
 # ---------------------------------------------------------------------------
-@router.get("/energy/timeline", response_model=list[TimelinePoint])
+@router.get("/energy/timeline")
 async def get_timeline():
-    """Return per-minute kW, state, and cost for the last 24 hours."""
-    now   = datetime.now(timezone.utc)
-    start = now - timedelta(hours=24)
-    raw   = await timebase_client.fetch_all_tags(start=start, end=now)
-    df    = state_engine.build_dataframe(raw)
-    return cost_calculator.aggregate_timeline(df)
+    """Return per-minute kW, state, and cost for the last 24 hours.
+
+    Sourced from the in-memory ring buffer maintained by the processing loop.
+    On a cold start the buffer fills up over time; clients should expect a
+    growing series until 24h have elapsed since boot. On any failure or
+    empty dataset, returns an empty list, status 200.
+    """
+    try:
+        points = processing.timeline_points()
+        if points:
+            return points
+        # Cold start fallback — read directly from the historian for the first tick.
+        now   = datetime.now(timezone.utc)
+        start = now - timedelta(hours=24)
+        raw   = await historian_client.fetch_all_tags(start=start, end=now)
+        df    = state_engine.build_dataframe(raw)
+        if df.empty:
+            return []
+        return cost_calculator.aggregate_timeline(df)
+    except Exception:
+        logger.exception("timeline aggregation failed")
+        return []
 
 
 # ---------------------------------------------------------------------------
-# GET /api/energy/current — live snapshot
+# GET /api/energy/current — live snapshot (from LatestState, no historian I/O)
 # ---------------------------------------------------------------------------
-@router.get("/energy/current", response_model=CurrentMetrics)
+@router.get("/energy/current")
 async def get_current():
-    """Return current motor amps, kW, live $/hr cost, TOU period, and shift."""
-    values = await timebase_client.fetch_current_values()
-    now = datetime.now(timezone.utc)
+    """Return current motor amps, kW, live $/hr cost, TOU period, and shift.
 
-    amps  = values.get("motor_amps")
-    state = state_engine.classify_state(
-        process=bool(values.get("process") or False),
-        cip=bool(values.get("cip") or False),
-        running=bool(values.get("running") or False),
-    )
-    tou_period = cost_calculator.get_tou_period(now)
-    tou_rate   = cost_calculator.get_tou_rate(now)
-    shift      = cost_calculator.get_shift(now)
-    return cost_calculator.current_cost(amps, state, tou_period=tou_period, tou_rate=tou_rate, shift=shift)
+    Reads from the in-memory LatestState populated by the processing loop —
+    no historian round-trip on the request path.
+    """
+    return processing.current_metrics()
 
 
 # ---------------------------------------------------------------------------
@@ -107,7 +151,7 @@ async def get_raw(hours: int = Query(default=1, ge=1, le=168)):
     """
     now   = datetime.now(timezone.utc)
     start = now - timedelta(hours=hours)
-    raw   = await timebase_client.fetch_all_tags(start=start, end=now)
+    raw   = await historian_client.fetch_all_tags(start=start, end=now)
 
     result = []
     for alias, points in raw.items():

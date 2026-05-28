@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { fetchSummary } from '../api/energyApi'
 import { formatCurrency, formatKwh } from '../utils/formatters'
-import { DollarSign, Zap, Clock, Activity } from 'lucide-react'
+import { DollarSign, Zap, Clock, Activity, Info } from 'lucide-react'
 import InfoTooltip from './InfoTooltip'
 
 function CardSkeleton() {
@@ -109,6 +109,13 @@ export default function KPISummaryCards({ refreshKey, onRefreshComplete }) {
   ]
 
   return (
+    <div className="space-y-3">
+      {data?.warning && (
+        <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl px-4 py-3 flex items-start gap-2 text-slate-300 text-sm">
+          <Info className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
+          <span>{data.warning}</span>
+        </div>
+      )}
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {cards.map(({ label, value, icon: Icon, bg, color, glow, info }) => (
         <div
@@ -131,6 +138,7 @@ export default function KPISummaryCards({ refreshKey, onRefreshComplete }) {
           <p className="text-slate-500 text-sm mt-1">{label}</p>
         </div>
       ))}
+    </div>
     </div>
   )
 }
