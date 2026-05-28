@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { fetchSummary } from "../api/energyApi"
 import { formatCurrency, formatNumber } from "../utils/formatters"
-import { DollarSign, Zap, Clock, Activity, Flame } from "lucide-react"
+import { DollarSign, Zap, Clock, Activity, Flame, Info } from "lucide-react"
 import InfoTooltip from "./InfoTooltip"
 import Delta from "./Delta"
 
@@ -62,28 +62,36 @@ export default function KPISummaryCards({ refreshKey, days = 7 }) {
   const cards = computeCards(current, previous, days)
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
-      {cards.map(({ label, value, unit, icon: Icon, tint, info, delta }) => (
-        <div key={label} className="card card-hover p-5 relative">
-          <div className="flex items-start justify-between mb-4">
-            <div
-              className="flex h-9 w-9 items-center justify-center rounded-lg"
-              style={{ backgroundColor: tint.bg }}
-            >
-              <Icon style={{ color: tint.fg, width: 18, height: 18 }} />
-            </div>
-            {info && <InfoTooltip title={info.title} lines={info.lines} />}
-          </div>
-          <div className="label mb-1.5">{label}</div>
-          <div className="flex items-baseline gap-1.5">
-            <span className="num text-2xl font-semibold tracking-tight" style={{ color: tint.fg }}>
-              {value}
-            </span>
-            {unit && <span className="text-sm text-gray-500">{unit}</span>}
-          </div>
-          <div className="mt-1.5">{delta}</div>
+    <div className="space-y-3">
+      {current?.warning && (
+        <div className="card px-4 py-3 flex items-start gap-2 text-gray-300 text-sm">
+          <Info className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
+          <span>{current.warning}</span>
         </div>
-      ))}
+      )}
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
+        {cards.map(({ label, value, unit, icon: Icon, tint, info, delta }) => (
+          <div key={label} className="card card-hover p-5 relative">
+            <div className="flex items-start justify-between mb-4">
+              <div
+                className="flex h-9 w-9 items-center justify-center rounded-lg"
+                style={{ backgroundColor: tint.bg }}
+              >
+                <Icon style={{ color: tint.fg, width: 18, height: 18 }} />
+              </div>
+              {info && <InfoTooltip title={info.title} lines={info.lines} />}
+            </div>
+            <div className="label mb-1.5">{label}</div>
+            <div className="flex items-baseline gap-1.5">
+              <span className="num text-2xl font-semibold tracking-tight" style={{ color: tint.fg }}>
+                {value}
+              </span>
+              {unit && <span className="text-sm text-gray-500">{unit}</span>}
+            </div>
+            <div className="mt-1.5">{delta}</div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
