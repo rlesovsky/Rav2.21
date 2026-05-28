@@ -37,6 +37,10 @@ class EnergySummary(BaseModel):
     by_state:       dict[str, StateMetrics]
     by_shift:       dict[str, ShiftMetrics]
     by_tou_period:  dict[str, TouPeriodMetrics] = {}
+    # Set when the aggregation could not be computed (sparse/missing data,
+    # historian fault, etc). When present, numeric fields are zeros and the
+    # UI should render a neutral "insufficient data" note rather than an error.
+    warning:        Optional[str] = None
 
 
 class DailyStateMetrics(BaseModel):
