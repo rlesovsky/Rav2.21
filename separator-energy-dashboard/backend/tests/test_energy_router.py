@@ -5,6 +5,10 @@ return HTTP 200 with an empty-shape payload (and a `warning` string on
 /summary) — never HTTP 500. This was the post-outage Driftwood incident:
 sparse boolean data raised inside build_dataframe and every Analysis-tab
 panel rendered "Request failed with status code 500".
+
+/summary and /daily are served through the analytics cache, so each test
+clears that cache first — otherwise a successful empty-data computation
+cached under ("summary", 7, 0) would mask the exception path.
 """
 
 from contextlib import asynccontextmanager
@@ -14,6 +18,7 @@ from unittest.mock import AsyncMock, patch
 from fastapi.testclient import TestClient
 
 import main
+from services import analytics, processing
 
 
 @asynccontextmanager
@@ -22,20 +27,23 @@ async def _noop_lifespan(app):
 
 
 def _client() -> TestClient:
-    # Skip startup so tests don't reach the historian. main.app.router holds
-    # the lifespan callable that TestClient invokes on enter/exit.
+    # Skip startup so tests don't reach the historian or start the prewarm
+    # loop. main.app.router holds the lifespan callable TestClient invokes.
     main.app.router.lifespan_context = _noop_lifespan  # type: ignore[attr-defined]
     return TestClient(main.app)
 
 
 class SummaryEndpointTests(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self) -> None:
+        analytics.clear_cache()
+
     async def test_state_engine_exception_returns_200_with_warning(self) -> None:
         with patch(
-            "routers.energy.historian_client.fetch_all_tags",
+            "services.analytics.historian_client.fetch_all_tags",
             new_callable=AsyncMock,
             return_value={"motor_amps": [], "running": [], "cip": [], "process": []},
         ), patch(
-            "routers.energy.state_engine.build_dataframe",
+            "services.analytics.state_engine.build_dataframe",
             side_effect=RuntimeError("simulated build failure"),
         ):
             with _client() as client:
@@ -52,9 +60,11 @@ class SummaryEndpointTests(IsolatedAsyncioTestCase):
         for state in ("Processing", "CIP", "Idle", "Shutdown"):
             self.assertIn(state, body["by_state"])
 
-    async def test_empty_historian_data_returns_warning(self) -> None:
+    async def test_empty_historian_data_returns_zeros_no_500(self) -> None:
+        # Empty data is not an error — it computes a clean zero summary.
+        # The `warning` field is reserved for the exception path.
         with patch(
-            "routers.energy.historian_client.fetch_all_tags",
+            "services.analytics.historian_client.fetch_all_tags",
             new_callable=AsyncMock,
             return_value={"motor_amps": [], "running": [], "cip": [], "process": []},
         ):
@@ -63,17 +73,21 @@ class SummaryEndpointTests(IsolatedAsyncioTestCase):
 
         self.assertEqual(response.status_code, 200)
         body = response.json()
-        self.assertIsNotNone(body.get("warning"))
+        self.assertEqual(body["total_cost_usd"], 0)
+        self.assertEqual(body["total_kwh"], 0)
 
 
 class DailyEndpointTests(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self) -> None:
+        analytics.clear_cache()
+
     async def test_state_engine_exception_returns_200_with_empty_list(self) -> None:
         with patch(
-            "routers.energy.historian_client.fetch_all_tags",
+            "services.analytics.historian_client.fetch_all_tags",
             new_callable=AsyncMock,
             return_value={"motor_amps": [], "running": [], "cip": [], "process": []},
         ), patch(
-            "routers.energy.state_engine.build_dataframe",
+            "services.analytics.state_engine.build_dataframe",
             side_effect=RuntimeError("simulated build failure"),
         ):
             with _client() as client:
@@ -86,7 +100,6 @@ class DailyEndpointTests(IsolatedAsyncioTestCase):
 class TimelineEndpointTests(IsolatedAsyncioTestCase):
     async def test_state_engine_exception_returns_200_with_empty_list(self) -> None:
         # Force the cold-start branch by emptying the ring buffer first.
-        from services import processing
         processing._reset_for_tests()
 
         with patch(

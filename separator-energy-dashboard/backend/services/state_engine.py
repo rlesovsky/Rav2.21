@@ -110,8 +110,13 @@ def build_dataframe(raw: dict[str, list[dict]]) -> pd.DataFrame:
     # Build a Series for each tag
     series = {}
     for alias, points in raw.items():
+        # Defensive: the historian contract is {t, v, q}, but a feed may slip in
+        # points missing a timestamp or value (boundary / no-data markers). Skip
+        # them rather than KeyError on p["v"] — the legacy TimeBase client emits
+        # such points and they used to take down the whole Analysis tab.
+        points = [p for p in points if isinstance(p, dict) and "t" in p and "v" in p]
         if not points:
-            logger.warning("state_engine: tag '%s' has no data", alias)
+            logger.warning("state_engine: tag '%s' has no usable points", alias)
             series[alias] = pd.Series(dtype=float)
             continue
 

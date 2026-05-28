@@ -71,6 +71,36 @@ class BuildDataframeTests(TestCase):
         )
         self.assertTrue(df.empty)
 
+    def test_points_missing_value_key_are_skipped_not_crash(self) -> None:
+        """Production incident: the legacy TimeBase feed includes good-quality
+        points that carry only a timestamp (no 'v' key) — a boundary/no-data
+        marker buried mid-series. Previously crashed with KeyError: 'v' and
+        500'd every Analysis panel. Such points must be skipped, real ones kept."""
+        amps = self._amps_series()
+        # Inject a value-less marker in the middle of the dense amp series.
+        amps.insert(3, {"t": _iso(self.start + timedelta(minutes=2, seconds=30)), "q": 192})
+        raw = {
+            "motor_amps": amps,
+            "running":    [{"t": _iso(self.start), "v": 1, "q": 192},
+                           {"t": _iso(self.start + timedelta(minutes=1)), "q": 192}],  # value-less
+            "cip":        [{"t": _iso(self.start), "v": 0, "q": 192}],
+            "process":    [{"t": _iso(self.start), "v": 0, "q": 192}],
+        }
+        df = state_engine.build_dataframe(raw)
+        self.assertFalse(df.empty, "real points must survive after dropping value-less markers")
+        self.assertFalse(df["state"].isna().any())
+        self.assertTrue((df["state"] == STATE_IDLE).all())  # running=1, process/cip=0
+
+    def test_all_points_value_less_returns_empty_not_crash(self) -> None:
+        raw = {
+            "motor_amps": [{"t": _iso(self.start), "q": 192}],   # no 'v'
+            "running":    [{"t": _iso(self.start), "q": 192}],
+            "cip":        [{"t": _iso(self.start), "q": 192}],
+            "process":    [{"t": _iso(self.start), "q": 192}],
+        }
+        df = state_engine.build_dataframe(raw)
+        self.assertTrue(df.empty)
+
     def test_sparse_boolean_with_single_boundary_clamped_point(self) -> None:
         """Smoking-gun scenario: booleans logged on-change have zero in-window
         points; i3X returns a single boundary-clamped seed point at startTime."""
