@@ -12,13 +12,11 @@
  * to every mounted panel exactly as it did on the old single page. This keeps
  * the existing self-fetching components untouched.
  *
- * RateConfigPanel sits above the tab strip here through Phase 3; Phase 4
- * relocates it to the Settings page.
+ * RateConfigPanel has moved to the Settings page (Phase 4); it is no longer
+ * rendered in the asset body.
  * ============================================================================= */
 
 import { useParams, Navigate, NavLink } from 'react-router-dom'
-import { RefreshSlot } from '../context/RefreshContext'
-import RateConfigPanel from '../components/RateConfigPanel'
 import LiveTab from './tabs/LiveTab'
 import AnalysisTab from './tabs/AnalysisTab'
 import TrendsTab from './tabs/TrendsTab'
@@ -70,8 +68,6 @@ export default function SeparatorPage() {
 
   return (
     <div className="mx-auto max-w-[1600px] space-y-6">
-      <RefreshSlot render={(p) => <RateConfigPanel {...p} />} />
-
       <TabStrip active={tab} />
 
       {/* All panels stay mounted; only the active one is shown. */}
