@@ -36,7 +36,10 @@ export default function AppLayout() {
       <div className="flex min-w-0 flex-1 flex-col">
         <ContextBar pageTitle={titleForPath(pathname)} />
         <main className="flex-1 overflow-y-auto px-6 py-6">
-          <Outlet />
+          {/* key on pathname so the fade-in replays on each navigation */}
+          <div key={pathname} className="dv-page-enter">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

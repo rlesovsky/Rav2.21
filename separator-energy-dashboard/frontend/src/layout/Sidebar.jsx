@@ -29,10 +29,10 @@ const STATE_COLORS = {
 function NavItem({ to, icon, label, statusColor = null, end = false }) {
   const Icon = icon
   return (
-    <NavLink to={to} end={end} style={{ textDecoration: 'none' }}>
+    <NavLink to={to} end={end} style={{ textDecoration: 'none' }} title={label}>
       {({ isActive }) => (
         <div
-          className="relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors"
+          className="relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors justify-center lg:justify-start"
           style={{
             color: isActive ? 'var(--dv-ink)' : 'var(--dv-dim)',
             background: isActive
@@ -47,7 +47,7 @@ function NavItem({ to, icon, label, statusColor = null, end = false }) {
             />
           )}
           {Icon && <Icon size={18} style={{ color: isActive ? 'var(--dv-blue)' : 'var(--dv-faint)' }} />}
-          <span className="flex-1">{label}</span>
+          <span className="hidden flex-1 lg:block">{label}</span>
           {statusColor && <span className="h-2 w-2 rounded-full" style={{ background: statusColor }} />}
         </div>
       )}
@@ -58,7 +58,7 @@ function NavItem({ to, icon, label, statusColor = null, end = false }) {
 function SectionLabel({ children }) {
   return (
     <div
-      className="px-3 pb-1 pt-4 text-[0.65rem] font-semibold uppercase"
+      className="hidden px-3 pb-1 pt-4 text-[0.65rem] font-semibold uppercase lg:block"
       style={{ color: 'var(--dv-faint)', letterSpacing: '0.18em' }}
     >
       {children}
@@ -88,13 +88,16 @@ export default function Sidebar() {
 
   return (
     <aside
-      className="flex h-full w-64 flex-col border-r"
+      className="flex h-full w-16 flex-col border-r transition-all duration-200 lg:w-64"
       style={{ background: 'var(--dv-panel-2)', borderColor: 'var(--dv-line-2)' }}
     >
-      {/* Brand lockup — DriftView product identity */}
-      <div className="flex items-center gap-3 border-b px-5 py-5" style={{ borderColor: 'var(--dv-line-2)' }}>
+      {/* Brand lockup — DriftView product identity. Collapses to the DV mark on
+          narrow viewports (icon-only rail); the wordmark shows at lg+. */}
+      <div className="flex items-center justify-center gap-3 border-b px-3 py-5 lg:justify-start lg:px-5" style={{ borderColor: 'var(--dv-line-2)' }}>
         <DvMark size={36} />
-        <DvWordmark />
+        <div className="hidden lg:block">
+          <DvWordmark />
+        </div>
       </div>
 
       {/* Navigation */}
@@ -111,10 +114,14 @@ export default function Sidebar() {
       </nav>
 
       {/* Site picker — Driftwood Dairy client/site identity */}
-      <div className="border-t px-4 py-4" style={{ borderColor: 'var(--dv-line-2)' }}>
-        <div className="flex items-center gap-3 rounded-lg px-3 py-2" style={{ background: 'var(--dv-panel)' }}>
+      <div className="border-t px-2 py-4 lg:px-4" style={{ borderColor: 'var(--dv-line-2)' }}>
+        <div
+          className="flex items-center justify-center gap-3 rounded-lg px-3 py-2 lg:justify-start"
+          style={{ background: 'var(--dv-panel)' }}
+          title="Driftwood Dairy — El Monte, CA"
+        >
           <MapPin size={16} style={{ color: 'var(--dv-teal)' }} />
-          <div className="leading-tight">
+          <div className="hidden leading-tight lg:block">
             <div className="text-sm font-medium" style={{ color: 'var(--dv-ink)' }}>Driftwood Dairy</div>
             <div className="text-xs" style={{ color: 'var(--dv-faint)' }}>El Monte, CA</div>
           </div>

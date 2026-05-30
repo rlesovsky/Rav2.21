@@ -37,3 +37,18 @@
   --dv-font-ui: 'IBM Plex Sans', 'SF Pro Display', system-ui, sans-serif;
   --dv-font-mono: 'IBM Plex Mono', 'SF Mono', ui-monospace, monospace;
 }
+
+/* Page load-in transition — applied to the routed content region on each
+ * navigation (keyed by route in AppLayout). Subtle fade + rise. */
+@keyframes dv-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.dv-page-enter {
+  animation: dv-fade-in 220ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dv-page-enter { animation: none; }
+}
