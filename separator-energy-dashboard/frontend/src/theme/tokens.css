@@ -1,0 +1,39 @@
+/* =============================================================================
+ * DriftView theme tokens
+ * Single source of truth for the DriftView dark theme (spec §6.1 / §6.2).
+ * Components consume these via var(--dv-*). A light "Heritage" theme can later
+ * be layered by overriding these variables under a scope class.
+ * ============================================================================= */
+
+:root {
+  /* Surfaces */
+  --dv-bg-0: #060c19;
+  --dv-bg-1: #070e1d;
+  --dv-panel: #0e2140;
+  --dv-panel-2: #0b1a33;
+
+  /* Hairlines / borders */
+  --dv-line: #1c3253;
+  --dv-line-2: #152846;
+
+  /* Text hierarchy */
+  --dv-ink: #e8f0fb;
+  --dv-dim: #9fb4d2;
+  --dv-faint: #67809f;
+
+  /* Brand */
+  --dv-navy: #1c4e8a;
+  --dv-blue: #2f86d8;
+  --dv-teal: #2bb6b3;
+
+  /* Operating-state semantics (kept semantic, not brand-forced) */
+  --dv-state-processing: #27c281;
+  --dv-state-cip: #2f86d8;
+  --dv-state-idle: #f2a43a;
+  --dv-state-shutdown: #5b7193;
+
+  /* Type system */
+  --dv-font-display: 'DM Serif Display', Georgia, 'Times New Roman', serif;
+  --dv-font-ui: 'IBM Plex Sans', 'SF Pro Display', system-ui, sans-serif;
+  --dv-font-mono: 'IBM Plex Mono', 'SF Mono', ui-monospace, monospace;
+}
