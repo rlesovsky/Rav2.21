@@ -2,20 +2,14 @@ import { useState, useEffect } from 'react'
 import { fetchTimeline } from '../api/energyApi'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import InfoTooltip from './InfoTooltip'
+import { CHART } from '../theme/chartColors'
 import dayjs from 'dayjs'
-
-const STATE_COLORS = {
-  Processing: '#22C55E',
-  CIP: '#3B82F6',
-  Idle: '#F59E0B',
-  Shutdown: '#6B7280',
-}
 
 function Skeleton() {
   return (
-    <div className="bg-slate-800/30 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 h-80 animate-pulse">
-      <div className="h-6 bg-slate-700/50 rounded w-44 mb-4" />
-      <div className="h-56 bg-slate-700/50 rounded" />
+    <div className="bg-[#0e2140] backdrop-blur-sm border border-[#1c3253] rounded-xl p-6 h-80 animate-pulse">
+      <div className="h-6 bg-[#152846] rounded w-44 mb-4" />
+      <div className="h-56 bg-[#152846] rounded" />
     </div>
   )
 }
@@ -41,8 +35,8 @@ export default function EnergyTrendChart({ refreshKey, onRefreshComplete }) {
   if (loading && !data) return <Skeleton />
   if (error) {
     return (
-      <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-6">
-        <h2 className="text-slate-300 font-medium mb-4">Power Draw (24-Hour)</h2>
+      <div className="bg-[#0e2140] border border-[#1c3253] rounded-xl p-6">
+        <h2 className="text-[#e8f0fb] font-medium mb-4">Power Draw (24-Hour)</h2>
         <div className="text-red-400">Error: {error}</div>
       </div>
     )
@@ -87,9 +81,9 @@ export default function EnergyTrendChart({ refreshKey, onRefreshComplete }) {
   })()
 
   return (
-    <div className="bg-slate-800/30 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 hover:border-slate-500 hover:bg-slate-800/60 transition-all duration-200">
+    <div className="bg-[#0e2140] backdrop-blur-sm border border-[#1c3253] rounded-xl p-6 hover:border-[#2f86d8] hover:bg-[#0e2140] transition-all duration-200">
       <div className="flex items-center gap-1 mb-4">
-        <h2 className="text-slate-300 font-medium">Power Draw (24-Hour)</h2>
+        <h2 className="text-[#e8f0fb] font-medium">Power Draw (24-Hour)</h2>
         <InfoTooltip
           title="Power Draw (24-Hour)"
           lines={[
@@ -109,7 +103,7 @@ export default function EnergyTrendChart({ refreshKey, onRefreshComplete }) {
                 <stop offset="100%" stopColor="#22D3EE" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+            <CartesianGrid strokeDasharray="3 3" stroke={CHART.grid} />
             <XAxis
               dataKey="ts"
               type="number"
@@ -117,18 +111,18 @@ export default function EnergyTrendChart({ refreshKey, onRefreshComplete }) {
               scale="time"
               ticks={hourlyTicks}
               tickFormatter={(v) => dayjs(v).format('h A')}
-              tick={{ fill: '#94a3b8', fontSize: 12 }}
+              tick={{ fill: CHART.axis, fontSize: 12 }}
             />
-            <YAxis tick={{ fill: '#94a3b8', fontSize: 12 }} tickFormatter={(v) => `${v} kW`} domain={[0, 'auto']} />
+            <YAxis tick={{ fill: CHART.axis, fontSize: 12 }} tickFormatter={(v) => `${v} kW`} domain={[0, 'auto']} />
             <Tooltip
-              cursor={{ stroke: '#94a3b8', strokeOpacity: 0.2 }}
+              cursor={{ stroke: CHART.axis, strokeOpacity: 0.2 }}
               content={({ active, payload }) => {
                 if (!active || !payload?.length) return null
                 const p = payload[0]?.payload
                 return (
-                  <div className="bg-slate-800 border border-slate-600 rounded-lg p-3 shadow-xl">
+                  <div className="bg-[#0b1a33] border border-[#1c3253] rounded-lg p-3 shadow-xl">
                     {p && (
-                      <p className="text-slate-200 font-medium mb-1">
+                      <p className="text-[#e8f0fb] font-medium mb-1">
                         {p.fullTime} — {p.state} · {p.tou_period} · {p.shift}
                       </p>
                     )}

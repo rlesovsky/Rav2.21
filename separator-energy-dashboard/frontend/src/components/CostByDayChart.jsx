@@ -2,20 +2,14 @@ import { useState, useEffect } from 'react'
 import { fetchDaily } from '../api/energyApi'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import InfoTooltip from './InfoTooltip'
+import { STATE_COLORS, CHART } from '../theme/chartColors'
 import dayjs from 'dayjs'
-
-const STATE_COLORS = {
-  Processing: '#22C55E',
-  CIP: '#3B82F6',
-  Idle: '#F59E0B',
-  Shutdown: '#6B7280',
-}
 
 function Skeleton() {
   return (
-    <div className="bg-slate-800/30 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 h-80 animate-pulse">
-      <div className="h-6 bg-slate-700/50 rounded w-40 mb-4" />
-      <div className="h-56 bg-slate-700/50 rounded" />
+    <div className="bg-[#0e2140] backdrop-blur-sm border border-[#1c3253] rounded-xl p-6 h-80 animate-pulse">
+      <div className="h-6 bg-[#152846] rounded w-40 mb-4" />
+      <div className="h-56 bg-[#152846] rounded" />
     </div>
   )
 }
@@ -41,8 +35,8 @@ export default function CostByDayChart({ refreshKey, onRefreshComplete }) {
   if (loading && !data) return <Skeleton />
   if (error) {
     return (
-      <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-6">
-        <h2 className="text-slate-300 font-medium mb-4">Daily Cost (7-Day)</h2>
+      <div className="bg-[#0e2140] border border-[#1c3253] rounded-xl p-6">
+        <h2 className="text-[#e8f0fb] font-medium mb-4">Daily Cost (7-Day)</h2>
         <div className="text-red-400">Error: {error}</div>
       </div>
     )
@@ -64,9 +58,9 @@ export default function CostByDayChart({ refreshKey, onRefreshComplete }) {
   })
 
   return (
-    <div className="bg-slate-800/30 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 hover:border-slate-500 hover:bg-slate-800/60 transition-all duration-200">
+    <div className="bg-[#0e2140] backdrop-blur-sm border border-[#1c3253] rounded-xl p-6 hover:border-[#2f86d8] hover:bg-[#0e2140] transition-all duration-200">
       <div className="flex items-center gap-1 mb-4">
-        <h2 className="text-slate-300 font-medium">Daily Cost (7-Day)</h2>
+        <h2 className="text-[#e8f0fb] font-medium">Daily Cost (7-Day)</h2>
         <InfoTooltip
           title="Daily Cost (7-Day)"
           lines={[
@@ -80,17 +74,17 @@ export default function CostByDayChart({ refreshKey, onRefreshComplete }) {
       <div className="h-72">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-            <XAxis dataKey="label" tick={{ fill: '#94a3b8', fontSize: 12 }} />
-            <YAxis tick={{ fill: '#94a3b8', fontSize: 12 }} tickFormatter={(v) => `$${v}`} />
+            <CartesianGrid strokeDasharray="3 3" stroke={CHART.grid} />
+            <XAxis dataKey="label" tick={{ fill: CHART.axis, fontSize: 12 }} />
+            <YAxis tick={{ fill: CHART.axis, fontSize: 12 }} tickFormatter={(v) => `$${v}`} />
             <Tooltip
               content={({ active, payload }) => {
                 if (!active || !payload?.length) return null
                 const p = payload[0]?.payload
                 return (
-                  <div className="bg-slate-800 border border-slate-600 rounded-lg p-3 shadow-xl">
-                    <p className="text-slate-200 font-medium mb-1">{p?.day} {p?.label}</p>
-                    <p className="text-slate-400 text-sm mb-2">Total: ${(p?.total ?? 0).toFixed(2)}</p>
+                  <div className="bg-[#0b1a33] border border-[#1c3253] rounded-lg p-3 shadow-xl">
+                    <p className="text-[#e8f0fb] font-medium mb-1">{p?.day} {p?.label}</p>
+                    <p className="text-[#9fb4d2] text-sm mb-2">Total: ${(p?.total ?? 0).toFixed(2)}</p>
                     {payload.map((entry) => (
                       <p key={entry.dataKey} className="text-sm" style={{ color: entry.color }}>
                         {entry.name}: ${(entry.value ?? 0).toFixed(2)}

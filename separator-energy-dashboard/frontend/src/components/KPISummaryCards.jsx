@@ -6,19 +6,19 @@ import InfoTooltip from './InfoTooltip'
 
 function CardSkeleton() {
   return (
-    <div className="bg-slate-800/30 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 h-32 animate-pulse">
-      <div className="h-10 w-10 bg-slate-700/50 rounded-lg mb-3" />
-      <div className="h-8 bg-slate-700/50 rounded w-24 mb-2" />
-      <div className="h-4 bg-slate-700/50 rounded w-20" />
+    <div className="bg-[#0e2140] backdrop-blur-sm border border-[#1c3253] rounded-xl p-6 h-32 animate-pulse">
+      <div className="h-10 w-10 bg-[#152846] rounded-lg mb-3" />
+      <div className="h-8 bg-[#152846] rounded w-24 mb-2" />
+      <div className="h-4 bg-[#152846] rounded w-20" />
     </div>
   )
 }
 
 const accentStyles = {
-  cyan: { bg: '#06B6D420', color: '#22D3EE', glow: '0 0 20px #06B6D422' },
-  purple: { bg: '#8B5CF620', color: '#A78BFA', glow: '0 0 20px #8B5CF622' },
-  amber: { bg: '#F59E0B20', color: '#FBBF24', glow: '0 0 20px #F59E0B22' },
-  green: { bg: '#22C55E20', color: '#4ADE80', glow: '0 0 20px #22C55E22' },
+  cyan: { bg: '#2bb6b320', color: '#22D3EE', glow: '0 0 20px #2bb6b322' },
+  purple: { bg: '#2f86d820', color: '#A78BFA', glow: '0 0 20px #2f86d822' },
+  amber: { bg: '#f2a43a20', color: '#FBBF24', glow: '0 0 20px #f2a43a22' },
+  green: { bg: '#27c28120', color: '#4ADE80', glow: '0 0 20px #27c28122' },
 }
 
 export default function KPISummaryCards({ refreshKey, onRefreshComplete }) {
@@ -111,7 +111,7 @@ export default function KPISummaryCards({ refreshKey, onRefreshComplete }) {
   return (
     <div className="space-y-3">
       {data?.warning && (
-        <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl px-4 py-3 flex items-start gap-2 text-slate-300 text-sm">
+        <div className="bg-[#0e2140] border border-[#1c3253] rounded-xl px-4 py-3 flex items-start gap-2 text-[#e8f0fb] text-sm">
           <Info className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
           <span>{data.warning}</span>
         </div>
@@ -120,7 +120,7 @@ export default function KPISummaryCards({ refreshKey, onRefreshComplete }) {
       {cards.map(({ label, value, icon: Icon, bg, color, glow, info }) => (
         <div
           key={label}
-          className="bg-slate-800/30 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 hover:border-slate-500 hover:bg-slate-800/60 transition-all duration-200 hover:scale-[1.02]"
+          className="bg-[#0e2140] backdrop-blur-sm border border-[#1c3253] rounded-xl p-6 hover:border-[#2f86d8] hover:bg-[#0e2140] transition-all duration-200 hover:scale-[1.02]"
           style={{ boxShadow: 'none' }}
           onMouseEnter={(e) => (e.currentTarget.style.boxShadow = glow)}
           onMouseLeave={(e) => (e.currentTarget.style.boxShadow = 'none')}
@@ -134,8 +134,8 @@ export default function KPISummaryCards({ refreshKey, onRefreshComplete }) {
             </div>
             {info && <InfoTooltip title={info.title} lines={info.lines} />}
           </div>
-          <p className="text-2xl font-semibold text-slate-100 font-mono">{value}</p>
-          <p className="text-slate-500 text-sm mt-1">{label}</p>
+          <p className="text-2xl font-semibold text-[#e8f0fb] font-mono">{value}</p>
+          <p className="text-[#67809f] text-sm mt-1">{label}</p>
         </div>
       ))}
     </div>

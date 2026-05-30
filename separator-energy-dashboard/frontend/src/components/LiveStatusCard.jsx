@@ -2,22 +2,16 @@ import { useState, useEffect } from 'react'
 import { fetchCurrent } from '../api/energyApi'
 import { formatCurrency, formatKw, formatRate } from '../utils/formatters'
 import InfoTooltip from './InfoTooltip'
+import { STATE_COLORS } from '../theme/chartColors'
 import dayjs from 'dayjs'
-
-const STATE_COLORS = {
-  Processing: '#22C55E',
-  CIP: '#3B82F6',
-  Idle: '#F59E0B',
-  Shutdown: '#6B7280',
-}
 
 function Skeleton() {
   return (
-    <div className="bg-slate-800/30 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 animate-pulse">
-      <div className="h-6 bg-slate-700/50 rounded w-1/3 mb-4" />
+    <div className="bg-[#0e2140] backdrop-blur-sm border border-[#1c3253] rounded-xl p-6 animate-pulse">
+      <div className="h-6 bg-[#152846] rounded w-1/3 mb-4" />
       <div className="flex flex-wrap gap-6">
         {[1, 2, 3, 4, 5, 6].map((i) => (
-          <div key={i} className="h-8 bg-slate-700/50 rounded w-24" />
+          <div key={i} className="h-8 bg-[#152846] rounded w-24" />
         ))}
       </div>
     </div>
@@ -53,14 +47,14 @@ export default function LiveStatusCard({ refreshKey, onRefreshComplete }) {
     )
   }
 
-  const stateColor = STATE_COLORS[data?.state] ?? '#6B7280'
+  const stateColor = STATE_COLORS[data?.state] ?? '#5b7193'
   const lastUpdated = lastFetch ? dayjs(lastFetch).format('MMM D, h:mm:ss A') : '—'
 
   return (
-    <div className="bg-slate-800/30 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 hover:border-slate-500 hover:bg-slate-800/60 transition-all duration-200 hover:scale-[1.02]">
+    <div className="bg-[#0e2140] backdrop-blur-sm border border-[#1c3253] rounded-xl p-6 hover:border-[#2f86d8] hover:bg-[#0e2140] transition-all duration-200 hover:scale-[1.02]">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-1">
-          <h2 className="text-slate-300 font-medium">Live Status</h2>
+          <h2 className="text-[#e8f0fb] font-medium">Live Status</h2>
           <InfoTooltip
             title="Live Status"
             lines={[
@@ -73,41 +67,41 @@ export default function LiveStatusCard({ refreshKey, onRefreshComplete }) {
             ]}
           />
         </div>
-        <span className="text-slate-500 text-sm">Last updated: {lastUpdated}</span>
+        <span className="text-[#67809f] text-sm">Last updated: {lastUpdated}</span>
       </div>
       <div className="flex flex-wrap items-center gap-6">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: stateColor }} />
           <span
-            className="px-3 py-1 rounded-lg text-sm font-medium text-slate-100"
+            className="px-3 py-1 rounded-lg text-sm font-medium text-[#e8f0fb]"
             style={{ backgroundColor: `${stateColor}20` }}
           >
             {data?.state ?? '—'}
           </span>
         </div>
         <div>
-          <span className="text-slate-500 text-sm">Amps</span>
-          <p className="font-mono text-slate-300">{data?.amps != null ? data.amps.toFixed(1) : '—'}</p>
+          <span className="text-[#67809f] text-sm">Amps</span>
+          <p className="font-mono text-[#e8f0fb]">{data?.amps != null ? data.amps.toFixed(1) : '—'}</p>
         </div>
         <div>
-          <span className="text-slate-500 text-sm">kW</span>
-          <p className="font-mono text-slate-300">{data?.kw != null ? formatKw(data.kw) : '—'}</p>
+          <span className="text-[#67809f] text-sm">kW</span>
+          <p className="font-mono text-[#e8f0fb]">{data?.kw != null ? formatKw(data.kw) : '—'}</p>
         </div>
         <div>
-          <span className="text-slate-500 text-sm">$/hr</span>
-          <p className="font-mono text-slate-300">{data?.cost_per_hour != null ? formatCurrency(data.cost_per_hour) : '—'}</p>
+          <span className="text-[#67809f] text-sm">$/hr</span>
+          <p className="font-mono text-[#e8f0fb]">{data?.cost_per_hour != null ? formatCurrency(data.cost_per_hour) : '—'}</p>
         </div>
         <div>
-          <span className="text-slate-500 text-sm">TOU Period</span>
-          <p className="font-mono text-slate-300">{data?.tou_period ?? '—'}</p>
+          <span className="text-[#67809f] text-sm">TOU Period</span>
+          <p className="font-mono text-[#e8f0fb]">{data?.tou_period ?? '—'}</p>
         </div>
         <div>
-          <span className="text-slate-500 text-sm">TOU Rate</span>
-          <p className="font-mono text-slate-300">{data?.tou_rate != null ? formatRate(data.tou_rate) : '—'}</p>
+          <span className="text-[#67809f] text-sm">TOU Rate</span>
+          <p className="font-mono text-[#e8f0fb]">{data?.tou_rate != null ? formatRate(data.tou_rate) : '—'}</p>
         </div>
         <div>
-          <span className="text-slate-500 text-sm">Shift</span>
-          <p className="font-mono text-slate-300">{data?.shift ?? '—'}</p>
+          <span className="text-[#67809f] text-sm">Shift</span>
+          <p className="font-mono text-[#e8f0fb]">{data?.shift ?? '—'}</p>
         </div>
       </div>
     </div>

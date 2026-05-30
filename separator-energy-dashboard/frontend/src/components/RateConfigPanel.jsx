@@ -4,9 +4,9 @@ import { ChevronDown, ChevronUp } from 'lucide-react'
 
 function Skeleton() {
   return (
-    <div className="bg-slate-800/30 backdrop-blur-sm border border-slate-700/50 rounded-xl p-4 animate-pulse">
-      <div className="h-6 bg-slate-700/50 rounded w-48 mb-4" />
-      <div className="h-10 bg-slate-700/50 rounded w-full" />
+    <div className="bg-[#0e2140] backdrop-blur-sm border border-[#1c3253] rounded-xl p-4 animate-pulse">
+      <div className="h-6 bg-[#152846] rounded w-48 mb-4" />
+      <div className="h-10 bg-[#152846] rounded w-full" />
     </div>
   )
 }
@@ -72,10 +72,10 @@ export default function RateConfigPanel({ refreshKey, onRefreshComplete }) {
   if (loading && !config) return <Skeleton />
   if (error) {
     return (
-      <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-4">
+      <div className="bg-[#0e2140] border border-[#1c3253] rounded-xl p-4">
         <button type="button" className="flex items-center justify-between w-full text-left" onClick={() => setOpen((o) => !o)}>
-          <span className="text-slate-300 font-medium">Rate & Electrical Config</span>
-          {open ? <ChevronUp className="w-5 h-5 text-slate-500" /> : <ChevronDown className="w-5 h-5 text-slate-500" />}
+          <span className="text-[#e8f0fb] font-medium">Rate & Electrical Config</span>
+          {open ? <ChevronUp className="w-5 h-5 text-[#67809f]" /> : <ChevronDown className="w-5 h-5 text-[#67809f]" />}
         </button>
         <div className="text-red-400 mt-2">Error: {error}</div>
       </div>
@@ -83,52 +83,52 @@ export default function RateConfigPanel({ refreshKey, onRefreshComplete }) {
   }
 
   return (
-    <div className="bg-slate-800/30 backdrop-blur-sm border border-slate-700/50 rounded-xl overflow-hidden">
+    <div className="bg-[#0e2140] backdrop-blur-sm border border-[#1c3253] rounded-xl overflow-hidden">
       <button
         type="button"
         className="flex items-center justify-between w-full p-4 text-left hover:bg-slate-700/20 transition-colors"
         onClick={() => setOpen((o) => !o)}
       >
-        <span className="text-slate-300 font-medium">Rate & Electrical Config</span>
-        {open ? <ChevronUp className="w-5 h-5 text-slate-500" /> : <ChevronDown className="w-5 h-5 text-slate-500" />}
+        <span className="text-[#e8f0fb] font-medium">Rate & Electrical Config</span>
+        {open ? <ChevronUp className="w-5 h-5 text-[#67809f]" /> : <ChevronDown className="w-5 h-5 text-[#67809f]" />}
       </button>
       {open && (
-        <div className="p-4 pt-0 border-t border-slate-700/50">
-          <p className="text-slate-500 text-sm mb-4">
+        <div className="p-4 pt-0 border-t border-[#1c3253]">
+          <p className="text-[#67809f] text-sm mb-4">
             This updates the flat fallback rate. TOU rates are configured server-side.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
             <div>
-              <label className="block text-slate-500 text-sm mb-1">$/kWh rate</label>
+              <label className="block text-[#67809f] text-sm mb-1">$/kWh rate</label>
               <input
                 type="number"
                 step="0.01"
                 min="0.01"
                 max="2"
-                className="w-full bg-slate-700/50 rounded-lg border border-slate-600 px-3 py-2 font-mono text-slate-300"
+                className="w-full bg-[#152846] rounded-lg border border-[#1c3253] px-3 py-2 font-mono text-[#e8f0fb]"
                 value={form.rate_per_kwh}
                 onChange={(e) => setForm((f) => ({ ...f, rate_per_kwh: e.target.value }))}
               />
             </div>
             <div>
-              <label className="block text-slate-500 text-sm mb-1">Voltage</label>
+              <label className="block text-[#67809f] text-sm mb-1">Voltage</label>
               <input
                 type="number"
                 min="100"
                 max="600"
-                className="w-full bg-slate-700/50 rounded-lg border border-slate-600 px-3 py-2 font-mono text-slate-300"
+                className="w-full bg-[#152846] rounded-lg border border-[#1c3253] px-3 py-2 font-mono text-[#e8f0fb]"
                 value={form.voltage}
                 onChange={(e) => setForm((f) => ({ ...f, voltage: e.target.value }))}
               />
             </div>
             <div>
-              <label className="block text-slate-500 text-sm mb-1">Power Factor</label>
+              <label className="block text-[#67809f] text-sm mb-1">Power Factor</label>
               <input
                 type="number"
                 step="0.01"
                 min="0.5"
                 max="1"
-                className="w-full bg-slate-700/50 rounded-lg border border-slate-600 px-3 py-2 font-mono text-slate-300"
+                className="w-full bg-[#152846] rounded-lg border border-[#1c3253] px-3 py-2 font-mono text-[#e8f0fb]"
                 value={form.power_factor}
                 onChange={(e) => setForm((f) => ({ ...f, power_factor: e.target.value }))}
               />
@@ -139,7 +139,7 @@ export default function RateConfigPanel({ refreshKey, onRefreshComplete }) {
               type="button"
               onClick={handleSave}
               disabled={saving}
-              className="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-slate-100 rounded-lg font-medium disabled:opacity-50"
+              className="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-[#e8f0fb] rounded-lg font-medium disabled:opacity-50"
             >
               {saving ? 'Saving…' : 'Save'}
             </button>

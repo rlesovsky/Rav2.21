@@ -38,7 +38,7 @@ export default function InfoTooltip({ title, lines }) {
         ref={buttonRef}
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="text-slate-500 hover:text-slate-300 transition-colors p-1 rounded"
+        className="text-[#67809f] hover:text-[#e8f0fb] transition-colors p-1 rounded"
         aria-label="Show methodology"
       >
         <Info className="w-4 h-4" />
@@ -46,16 +46,16 @@ export default function InfoTooltip({ title, lines }) {
       {open && createPortal(
         <div
           ref={panelRef}
-          className="fixed w-80 bg-slate-800 border border-slate-600 rounded-lg shadow-2xl p-4 text-sm"
+          className="fixed w-80 bg-[#0b1a33] border border-[#1c3253] rounded-lg shadow-2xl p-4 text-sm"
           style={{ top: pos.top, left: pos.left, zIndex: 9999 }}
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-slate-200 font-medium">{title}</span>
-            <button type="button" onClick={() => setOpen(false)} className="text-slate-500 hover:text-slate-300">
+            <span className="text-[#e8f0fb] font-medium">{title}</span>
+            <button type="button" onClick={() => setOpen(false)} className="text-[#67809f] hover:text-[#e8f0fb]">
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
-          <div className="space-y-2 text-slate-400">
+          <div className="space-y-2 text-[#9fb4d2]">
             {lines.map((line, i) => (
               <p key={i}>{line}</p>
             ))}
