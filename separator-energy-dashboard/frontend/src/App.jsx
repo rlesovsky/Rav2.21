@@ -22,7 +22,8 @@ export default function App() {
       <Routes>
         <Route element={<AppLayout />}>
           <Route index element={<FleetOverview />} />
-          <Route path="asset/separator/*" element={<SeparatorPage />} />
+          <Route path="asset/separator" element={<Navigate to="/asset/separator/analysis" replace />} />
+          <Route path="asset/separator/:tab" element={<SeparatorPage />} />
           <Route path="settings" element={<Settings />} />
           <Route path="reports" element={<Reports />} />
           <Route path="*" element={<Navigate to="/" replace />} />
