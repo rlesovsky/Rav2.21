@@ -1,4 +1,4 @@
-// FleetOverview — mockup #page-fleet. The Separator tile is wired to REAL data
+// FleetOverview — Plant Overview (mockup #page-fleet). The Separator tile is wired to REAL data
 // (7-day summary for cost + processing %, live current for kW + state). Glycol
 // and Pasteurizer have no real source yet, so their tiles use the mockup's
 // static demo values and carry a DEMO marker — we never present fabricated
@@ -130,7 +130,7 @@ export default function FleetOverview() {
 
   return (
     <div className="scroll">
-      <div className="row k4 mb">
+      <div className="row k3 mb">
         <div className="card">
           <div className="ct">
             <span className="badge-i" style={{ background: "rgba(43,182,179,.14)" }}>
@@ -162,16 +162,6 @@ export default function FleetOverview() {
           <div className="kl">Assets Online</div>
           <div className="kv" style={{ color: "#5fdca6" }}>1<small>/ 3 live</small></div>
           <div className="delta good"><span>●</span><span className="v">Separator live</span><span className="x">· 2 demo</span></div>
-        </div>
-        <div className="card">
-          <div className="ct">
-            <span className="badge-i" style={{ background: "rgba(239,106,106,.13)" }}>
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#ef6a6a" strokeWidth="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" /></svg>
-            </span>
-          </div>
-          <div className="kl">Active Alarms</div>
-          <div className="kv" style={{ color: "#9fb4d2" }}>—</div>
-          <div className="delta"><span className="x">No alarm source connected</span></div>
         </div>
       </div>
 

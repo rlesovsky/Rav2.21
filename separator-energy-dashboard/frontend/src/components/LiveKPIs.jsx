@@ -15,10 +15,10 @@ const TINT = {
 }
 
 const STATE_COLORS = {
-  Processing: "#22c55e",
-  CIP: "#3b82f6",
-  Idle: "#f59e0b",
-  Shutdown: "#6b7280",
+  Processing: "#00D1AC",
+  CIP: "#00AEE5",
+  Idle: "#939394",
+  Shutdown: "#53565A",
 }
 
 function MiniCard({ label, value, unit, icon: Icon, tint, accent, subtitle }) {
@@ -55,7 +55,7 @@ export default function LiveKPIs({ current, lastFetch, error }) {
   }
 
   const stateName = current?.state ?? "—"
-  const stateColor = STATE_COLORS[stateName] ?? "#6b7280"
+  const stateColor = STATE_COLORS[stateName] ?? "#53565A"
   const stateTint = {
     bg: `${stateColor}1a`,  // 10% opacity tint
     fg: stateColor,

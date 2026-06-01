@@ -5,10 +5,10 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts"
 import InfoTooltip from "./InfoTooltip"
 
 const STATE_COLORS = {
-  Processing: "#22c55e",
-  CIP: "#3b82f6",
-  Idle: "#f59e0b",
-  Shutdown: "#6b7280",
+  Processing: "#00D1AC",
+  CIP: "#00AEE5",
+  Idle: "#939394",
+  Shutdown: "#53565A",
 }
 const STATE_ORDER = ["Processing", "CIP", "Idle", "Shutdown"]
 
@@ -68,7 +68,7 @@ export default function StateCostBreakdown({ refreshKey, days = 7 }) {
         />
       </div>
 
-      <div className="h-64">
+      <div className="h-80">
         {pieData.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>

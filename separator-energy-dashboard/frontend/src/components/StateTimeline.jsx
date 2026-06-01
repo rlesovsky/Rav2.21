@@ -5,10 +5,10 @@ import InfoTooltip from "./InfoTooltip"
 import dayjs from "dayjs"
 
 const STATE_COLORS = {
-  Processing: "#22c55e",
-  CIP: "#3b82f6",
-  Idle: "#f59e0b",
-  Shutdown: "#6b7280",
+  Processing: "#00D1AC",
+  CIP: "#00AEE5",
+  Idle: "#939394",
+  Shutdown: "#53565A",
 }
 const STATE_ORDER = ["Processing", "CIP", "Idle", "Shutdown"]
 
@@ -100,7 +100,7 @@ export default function StateTimeline({ refreshKey }) {
                 className="h-full"
                 style={{
                   width: `${widthPct}%`,
-                  backgroundColor: STATE_COLORS[r.state] ?? "#6b7280",
+                  backgroundColor: STATE_COLORS[r.state] ?? "#53565A",
                 }}
                 title={`${dayjs(r.start).format("h:mm A")} — ${r.state}`}
               />

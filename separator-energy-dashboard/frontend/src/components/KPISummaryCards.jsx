@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react"
-import { fetchSummary } from "../api/energyApi"
+import { fetchSummary, fetchDaily } from "../api/energyApi"
 import { formatCurrency, formatNumber } from "../utils/formatters"
 import { DollarSign, Zap, Clock, Activity, Flame, Info } from "lucide-react"
 import InfoTooltip from "./InfoTooltip"
 import Delta from "./Delta"
+import Sparkline from "./Sparkline"
 
 const TINT = {
   cyan:   { bg: "rgba(34, 211, 238, 0.10)",  fg: "#22d3ee" },
@@ -26,6 +27,7 @@ function CardSkeleton() {
 export default function KPISummaryCards({ refreshKey, days = 7 }) {
   const [current, setCurrent] = useState(null)
   const [previous, setPrevious] = useState(null)
+  const [daily, setDaily] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -47,6 +49,11 @@ export default function KPISummaryCards({ refreshKey, days = 7 }) {
       .catch((err) => { if (!cancelled) setError(err.message || "Failed to load") })
       .finally(() => { if (!cancelled) setLoading(false) })
 
+    // Per-day series powers the small cost/energy sparklines on the cards.
+    fetchDaily({ days })
+      .then((res) => { if (!cancelled) setDaily(res.data) })
+      .catch(() => {})
+
     return () => { cancelled = true }
   }, [refreshKey, days])
 
@@ -59,7 +66,7 @@ export default function KPISummaryCards({ refreshKey, days = 7 }) {
   }
   if (error) return <div className="card p-5 text-red-400">Error: {error}</div>
 
-  const cards = computeCards(current, previous, days)
+  const cards = computeCards(current, previous, days, daily)
 
   return (
     <div className="space-y-3">
@@ -70,8 +77,8 @@ export default function KPISummaryCards({ refreshKey, days = 7 }) {
         </div>
       )}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
-        {cards.map(({ label, value, unit, icon: Icon, tint, info, delta }) => (
-          <div key={label} className="card card-hover p-5 relative">
+        {cards.map(({ label, value, unit, icon: Icon, tint, info, delta, spark }) => (
+          <div key={label} className="card card-hover p-5 relative overflow-hidden">
             <div className="flex items-start justify-between mb-4">
               <div
                 className="flex h-9 w-9 items-center justify-center rounded-lg"
@@ -89,6 +96,7 @@ export default function KPISummaryCards({ refreshKey, days = 7 }) {
               {unit && <span className="text-sm text-gray-500">{unit}</span>}
             </div>
             <div className="mt-1.5">{delta}</div>
+            {spark}
           </div>
         ))}
       </div>
@@ -96,7 +104,11 @@ export default function KPISummaryCards({ refreshKey, days = 7 }) {
   )
 }
 
-function computeCards(cur, prev, days) {
+function computeCards(cur, prev, days, daily) {
+  // Real per-day series for the cost/energy card sparklines.
+  const costSeries = (daily ?? []).map((d) => d.total_cost_usd ?? 0)
+  const energySeries = (daily ?? []).map((d) => d.total_kwh ?? 0)
+
   const totalHours = cur?.by_state
     ? Object.values(cur.by_state).reduce((s, v) => s + (v.hours ?? 0), 0)
     : 0
@@ -137,6 +149,7 @@ function computeCards(cur, prev, days) {
         ],
       },
       delta: <Delta current={cur?.total_cost_usd} previous={prev?.total_cost_usd} goodDirection="down" suffix={deltaSuffix} />,
+      spark: <Sparkline points={costSeries} stroke="#06DCF2" />,
     },
     {
       label: "Total energy",
@@ -152,6 +165,7 @@ function computeCards(cur, prev, days) {
         ],
       },
       delta: <Delta current={cur?.total_kwh} previous={prev?.total_kwh} goodDirection="neutral" suffix={deltaSuffix} />,
+      spark: <Sparkline points={energySeries} stroke="#00AEE5" />,
     },
     {
       label: "Avg $/hr",
