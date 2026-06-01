@@ -78,7 +78,7 @@ export default function KPISummaryCards({ refreshKey, days = 7 }) {
       )}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
         {cards.map(({ label, value, unit, icon: Icon, tint, info, delta, spark }) => (
-          <div key={label} className="card card-hover p-5 relative overflow-hidden">
+          <div key={label} className="card card-hover p-5 relative overflow-hidden flex flex-col">
             <div className="flex items-start justify-between mb-4">
               <div
                 className="flex h-9 w-9 items-center justify-center rounded-lg"
@@ -88,14 +88,19 @@ export default function KPISummaryCards({ refreshKey, days = 7 }) {
               </div>
               {info && <InfoTooltip title={info.title} lines={info.lines} />}
             </div>
-            <div className="label mb-1.5">{label}</div>
+            {/* Fixed two-line label box so the value baseline anchors at the
+                same height on every card even when a label wraps. */}
+            <div className="label mb-1.5 flex items-end min-h-[2.4em]">{label}</div>
             <div className="flex items-baseline gap-1.5">
               <span className="num text-2xl font-semibold tracking-tight" style={{ color: tint.fg }}>
                 {value}
               </span>
               {unit && <span className="text-sm text-gray-500">{unit}</span>}
             </div>
-            <div className="mt-1.5">{delta}</div>
+            {/* mt-auto pins the delta to the card bottom, so all deltas line up
+                across the row regardless of label height. relative + z-10 keeps
+                it above the absolutely-positioned sparkline. */}
+            <div className="relative z-10 mt-auto pt-2.5">{delta}</div>
             {spark}
           </div>
         ))}

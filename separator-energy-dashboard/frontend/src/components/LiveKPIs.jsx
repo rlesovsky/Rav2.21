@@ -23,15 +23,17 @@ const STATE_COLORS = {
 
 function MiniCard({ label, value, unit, icon: Icon, tint, accent, subtitle }) {
   return (
-    <div className="card card-hover p-4">
+    <div className="card card-hover p-4 flex flex-col">
       <div className="flex items-center gap-2 mb-2">
         <div
-          className="flex h-7 w-7 items-center justify-center rounded-md"
+          className="flex h-7 w-7 items-center justify-center rounded-md shrink-0"
           style={{ backgroundColor: tint.bg }}
         >
           <Icon style={{ color: tint.fg, width: 14, height: 14 }} />
         </div>
-        <span className="label">{label}</span>
+        {/* Fixed two-line label box so single- and double-line labels keep the
+            value row anchored at the same height across all cards. */}
+        <span className="label flex items-center min-h-[2.4em] leading-tight">{label}</span>
       </div>
       <div className="flex items-baseline gap-1.5">
         <span
@@ -42,7 +44,9 @@ function MiniCard({ label, value, unit, icon: Icon, tint, accent, subtitle }) {
         </span>
         {unit && <span className="text-xs text-gray-500">{unit}</span>}
       </div>
-      {subtitle && <div className="mt-1 text-[10px] text-gray-500 num">{subtitle}</div>}
+      {/* Reserve the subtitle row on every card so cards without one don't sit
+          shorter — keeps the row visually even. */}
+      <div className="mt-auto pt-1 text-[10px] text-gray-500 num min-h-[1.2em]">{subtitle}</div>
     </div>
   )
 }
