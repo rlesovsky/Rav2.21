@@ -91,6 +91,21 @@ body{
 
 .scroll{padding:22px clamp(16px,2.4vw,30px) 40px;overflow:auto}
 .page{animation:fade .35s ease}
+
+/* ---- Live tab: fill the viewport so panels grow into the empty space ----
+ * .main is the flex column (topbar + content). .scroll.live becomes a flex
+ * column that fills remaining height; the telemetry panel sits at its natural
+ * height and the timeline panel flexes to absorb the rest. */
+.main{min-height:100vh}
+.scroll.live{display:flex;flex-direction:column;gap:15px;min-height:calc(100vh - 120px)}
+.scroll.live .panel.grow{flex:1 1 auto;display:flex;flex-direction:column;min-height:0}
+.scroll.live .panel.grow > .grow-body{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;min-height:0}
+
+/* Telemetry mini-cards: flex evenly across the full width, no clipping.
+ * 7 cards wrap gracefully on narrow widths instead of overflowing. */
+.telemrow{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:12px}
+@media (max-width:1500px){.telemrow{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (max-width:900px){.telemrow{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
 /* generic panels/cards */

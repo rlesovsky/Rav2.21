@@ -70,7 +70,7 @@ export default function LiveKPIs({ current, lastFetch, error }) {
   const shift = current?.shift ?? "—"
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3">
+    <div className="telemrow">
       <MiniCard
         label="Operating state"
         value={stateName}

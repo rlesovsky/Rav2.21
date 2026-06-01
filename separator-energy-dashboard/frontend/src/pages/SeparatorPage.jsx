@@ -38,15 +38,19 @@ function LiveTab({ refreshKey }) {
   const live = useLiveCurrent(refreshKey)
   return (
     <>
-      <div className="panel mb">
+      <div className="panel">
         <h3>Live separator telemetry</h3>
         <div className="sub">Snapshot · /api/energy/current</div>
         <LiveKPIs current={live.data} lastFetch={live.lastFetch} error={live.error} />
       </div>
-      <div className="panel">
+      {/* grow: this panel flexes to fill the remaining viewport height so the
+          24h timeline uses the empty space instead of leaving it blank. */}
+      <div className="panel grow">
         <h3>Operating-state timeline · 24 h</h3>
         <div className="sub">Per-minute classified state</div>
-        <StateTimeline refreshKey={refreshKey} />
+        <div className="grow-body">
+          <StateTimeline refreshKey={refreshKey} />
+        </div>
       </div>
     </>
   )
@@ -97,7 +101,7 @@ export default function SeparatorPage() {
           </button>
         ))}
       </div>
-      <div className="scroll">
+      <div className={active === "live" ? "scroll live" : "scroll"}>
         {active === "live" && <LiveTab refreshKey={refreshKey} />}
         {active === "analysis" && <AnalysisTab refreshKey={refreshKey} />}
         {active === "trends" && (
