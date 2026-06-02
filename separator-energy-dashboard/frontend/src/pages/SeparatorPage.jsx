@@ -1,9 +1,8 @@
-// SeparatorPage — the only fully REAL asset. Tabs (Live / Analysis / Trends /
-// Alarms) live in the URL via the :tab param; Analysis is the default to match
-// the mockup. Reuses the existing API-backed components (LiveKPIs, StateTimeline,
+// SeparatorPage — the only fully REAL asset. Tabs (Live / Analysis / Trends)
+// live in the URL via the :tab param; Analysis is the default to match the
+// mockup. Reuses the existing API-backed components (LiveKPIs, StateTimeline,
 // KPISummaryCards, StateCostBreakdown, ShiftCostBreakdown, CostByDayChart,
-// EnergyTrendChart) placed inside mockup .panel shells. Alarms is an honest
-// empty state — there is no real alarm source.
+// EnergyTrendChart) placed inside mockup .panel shells.
 import { useNavigate, useParams } from "react-router-dom"
 import { useRefreshKey } from "../layout/RefreshContext"
 import { useLiveCurrent } from "../hooks/useLiveCurrent"
@@ -20,7 +19,6 @@ const TABS = [
   { id: "live", label: "Live" },
   { id: "analysis", label: "Analysis" },
   { id: "trends", label: "Trends" },
-  { id: "alarms", label: "Alarms" },
 ]
 const VALID = new Set(TABS.map((t) => t.id))
 
@@ -40,15 +38,19 @@ function LiveTab({ refreshKey }) {
   const live = useLiveCurrent(refreshKey)
   return (
     <>
-      <div className="panel mb">
+      <div className="panel">
         <h3>Live separator telemetry</h3>
         <div className="sub">Snapshot · /api/energy/current</div>
         <LiveKPIs current={live.data} lastFetch={live.lastFetch} error={live.error} />
       </div>
-      <div className="panel">
+      {/* grow: this panel flexes to fill the remaining viewport height so the
+          24h timeline uses the empty space instead of leaving it blank. */}
+      <div className="panel grow">
         <h3>Operating-state timeline · 24 h</h3>
         <div className="sub">Per-minute classified state</div>
-        <StateTimeline refreshKey={refreshKey} />
+        <div className="grow-body">
+          <StateTimeline refreshKey={refreshKey} />
+        </div>
       </div>
     </>
   )
@@ -64,32 +66,18 @@ function AnalysisTab({ refreshKey }) {
       <div className="mb">
         <KPISummaryCards refreshKey={refreshKey} days={days} />
       </div>
-      <div className="row g2 mb">
+      {/* Give the donut a narrower companion column and let the shift bar chart
+          take the wider share, so both charts read as landscape. */}
+      <div
+        className="row mb"
+        style={{ gridTemplateColumns: "minmax(0, 0.8fr) minmax(0, 1.5fr)" }}
+      >
         <StateCostBreakdown refreshKey={refreshKey} days={days} />
         <ShiftCostBreakdown refreshKey={refreshKey} days={days} />
       </div>
+      {/* Full content-width daily-cost chart. */}
       <CostByDayChart refreshKey={refreshKey} days={days} />
     </>
-  )
-}
-
-function AlarmsTab() {
-  return (
-    <div className="panel">
-      <h3>Separator alarms</h3>
-      <div className="sub">Last 24 h</div>
-      <div className="placeholder">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-          <path d="M13.7 21a2 2 0 0 1-3.4 0" />
-        </svg>
-        <h3 style={{ justifyContent: "center", color: "var(--ink)" }}>No alarm source connected yet</h3>
-        <p style={{ marginTop: 8, maxWidth: 520, marginInline: "auto" }}>
-          The backend does not yet expose an alarm stream for the separator. Once an
-          alarm source is wired in, severity/message/time/status rows will appear here.
-        </p>
-      </div>
-    </div>
   )
 }
 
@@ -113,17 +101,20 @@ export default function SeparatorPage() {
           </button>
         ))}
       </div>
-      <div className="scroll">
+      <div className={active === "live" ? "scroll live" : active === "trends" ? "scroll fill" : "scroll"}>
         {active === "live" && <LiveTab refreshKey={refreshKey} />}
         {active === "analysis" && <AnalysisTab refreshKey={refreshKey} />}
         {active === "trends" && (
-          <div className="panel">
+          /* grow: the panel fills the viewport and the chart card flexes into
+             it, so the 24h trend expands/contracts with the window height. */
+          <div className="panel grow">
             <h3>Motor power trend · 24 h</h3>
             <div className="sub">kW per minute, derived from motor amps</div>
-            <EnergyTrendChart refreshKey={refreshKey} />
+            <div className="grow-body">
+              <EnergyTrendChart refreshKey={refreshKey} className="flex-1" />
+            </div>
           </div>
         )}
-        {active === "alarms" && <AlarmsTab />}
       </div>
     </>
   )

@@ -3,13 +3,7 @@ import { fetchTimeline } from "../api/energyApi"
 import { formatNumber } from "../utils/formatters"
 import InfoTooltip from "./InfoTooltip"
 import dayjs from "dayjs"
-
-const STATE_COLORS = {
-  Processing: "#22c55e",
-  CIP: "#3b82f6",
-  Idle: "#f59e0b",
-  Shutdown: "#6b7280",
-}
+import { STATE_COLORS } from "../config/stateColors"
 const STATE_ORDER = ["Processing", "CIP", "Idle", "Shutdown"]
 
 function Skeleton() {
@@ -100,7 +94,7 @@ export default function StateTimeline({ refreshKey }) {
                 className="h-full"
                 style={{
                   width: `${widthPct}%`,
-                  backgroundColor: STATE_COLORS[r.state] ?? "#6b7280",
+                  backgroundColor: STATE_COLORS[r.state] ?? "#53565A",
                 }}
                 title={`${dayjs(r.start).format("h:mm A")} — ${r.state}`}
               />

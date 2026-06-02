@@ -6,7 +6,7 @@
 # Routed through Traefik at separator.tse.prod.
 #
 # Deployment:
-#   1. Download separator-dashboard-v2.23.tar from the latest GitHub Actions
+#   1. Download separator-dashboard-v2.27.tar from the latest GitHub Actions
 #      "Build dashboard images" run (or build locally — see top-level README).
 #   2. In Portainer → Images → Import → upload the tar.
 #   3. In Portainer → Stacks → deploy/update with this file.
@@ -14,7 +14,7 @@
 
 services:
   separator-dashboard:
-    image: separator-dashboard:v2.23
+    image: separator-dashboard:v2.27
     container_name: separator-dashboard
     restart: unless-stopped
     networks:

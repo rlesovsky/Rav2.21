@@ -78,7 +78,7 @@ export default function EnergyTrendChart({ refreshKey, className = "" }) {
     // The card IS the flex item — `className` from the parent supplies the
     // flex sizing (e.g. "flex-[4] min-h-80"). Inside the card, header is
     // shrink-0 and the chart container takes flex-1 to fill the remainder.
-    <div className={`card card-hover p-5 flex flex-col min-h-80 ${className}`}>
+    <div className={`card card-hover p-5 flex flex-col min-h-96 ${className}`}>
       <div className="flex items-center gap-2 mb-3 shrink-0">
         <h2 className="text-sm font-medium text-white">Power draw — 24 hour</h2>
         <InfoTooltip
@@ -96,14 +96,14 @@ export default function EnergyTrendChart({ refreshKey, className = "" }) {
           h-full / flex-1 doesn't always resolve to a measurable pixel value
           and the chart renders 0x0. Wrapping it in relative+absolute gives
           ResponsiveContainer real dimensions to read. */}
-      <div className="flex-1 min-h-64 relative">
+      <div className="flex-1 min-h-80 relative">
         <div className="absolute inset-0">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
             <defs>
               <linearGradient id="kwFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#22d3ee" stopOpacity={0.22} />
-                <stop offset="100%" stopColor="#22d3ee" stopOpacity={0} />
+                <stop offset="0%" stopColor="#06DCF2" stopOpacity={0.22} />
+                <stop offset="100%" stopColor="#06DCF2" stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
@@ -129,7 +129,7 @@ export default function EnergyTrendChart({ refreshKey, className = "" }) {
             <Area
               type="monotone"
               dataKey="kw"
-              stroke="#22d3ee"
+              stroke="#06DCF2"
               strokeWidth={1.75}
               fill="url(#kwFill)"
               dot={false}

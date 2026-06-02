@@ -4,6 +4,7 @@
 import { formatCurrency, formatNumber, formatRate } from "../utils/formatters"
 import { Activity, Bolt, DollarSign, Sun, Zap, Users, Gauge } from "lucide-react"
 import { useRelativeTime } from "../hooks/useLiveCurrent"
+import { STATE_TINT } from "../config/stateColors"
 
 const TINT = {
   cyan:   { bg: "rgba(34, 211, 238, 0.10)",  fg: "#22d3ee" },
@@ -14,24 +15,19 @@ const TINT = {
   gray:   { bg: "rgba(156, 163, 175, 0.10)", fg: "#9ca3af" },
 }
 
-const STATE_COLORS = {
-  Processing: "#22c55e",
-  CIP: "#3b82f6",
-  Idle: "#f59e0b",
-  Shutdown: "#6b7280",
-}
-
 function MiniCard({ label, value, unit, icon: Icon, tint, accent, subtitle }) {
   return (
-    <div className="card card-hover p-4">
+    <div className="card card-hover p-4 flex flex-col">
       <div className="flex items-center gap-2 mb-2">
         <div
-          className="flex h-7 w-7 items-center justify-center rounded-md"
+          className="flex h-7 w-7 items-center justify-center rounded-md shrink-0"
           style={{ backgroundColor: tint.bg }}
         >
           <Icon style={{ color: tint.fg, width: 14, height: 14 }} />
         </div>
-        <span className="label">{label}</span>
+        {/* Fixed two-line label box so single- and double-line labels keep the
+            value row anchored at the same height across all cards. */}
+        <span className="label flex items-center min-h-[2.4em] leading-tight">{label}</span>
       </div>
       <div className="flex items-baseline gap-1.5">
         <span
@@ -42,7 +38,9 @@ function MiniCard({ label, value, unit, icon: Icon, tint, accent, subtitle }) {
         </span>
         {unit && <span className="text-xs text-gray-500">{unit}</span>}
       </div>
-      {subtitle && <div className="mt-1 text-[10px] text-gray-500 num">{subtitle}</div>}
+      {/* Reserve the subtitle row on every card so cards without one don't sit
+          shorter — keeps the row visually even. */}
+      <div className="mt-auto pt-1 text-[10px] text-gray-500 num min-h-[1.2em]">{subtitle}</div>
     </div>
   )
 }
@@ -55,11 +53,9 @@ export default function LiveKPIs({ current, lastFetch, error }) {
   }
 
   const stateName = current?.state ?? "—"
-  const stateColor = STATE_COLORS[stateName] ?? "#6b7280"
-  const stateTint = {
-    bg: `${stateColor}1a`,  // 10% opacity tint
-    fg: stateColor,
-  }
+  // Shared colorblind-safe palette; its tints carry legible foregrounds (the
+  // dark Shutdown slate would be unreadable as text if used raw).
+  const stateTint = STATE_TINT[stateName] ?? STATE_TINT.Shutdown
   const isStale = current?.is_stale === true
 
   const amps = current?.amps != null ? formatNumber(current.amps) : "—"
@@ -70,7 +66,7 @@ export default function LiveKPIs({ current, lastFetch, error }) {
   const shift = current?.shift ?? "—"
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3">
+    <div className="telemrow">
       <MiniCard
         label="Operating state"
         value={stateName}

@@ -6,15 +6,18 @@
  * ============================================================================= */
 
 :root{
-  --bg-0:#060c19; --bg-1:#070e1d;
-  --panel:#0e2140; --panel-2:#0b1a33; --panel-3:#0a1730;
-  --line:#1c3253; --line-soft:#152846;
-  --ink:#e8f0fb; --ink-dim:#9fb4d2; --ink-faint:#67809f;
-  --navy:#1c4e8a; --blue:#2f86d8; --teal:#2bb6b3;
-  --c-process:#27c281; --c-cip:#2f86d8; --c-idle:#f2a43a; --c-shutdown:#5b7193;
-  --c-cold:#3fb6e8; --c-warm:#ef8a5a;
-  --good:#27c281; --warn:#f2a43a; --bad:#ef6a6a;
-  --radius:15px; --shadow:0 12px 30px -16px rgba(0,0,0,.7);
+  /* DriftView brand palette (updated) */
+  --bg-0:#010509; --bg-1:#040c12;
+  --panel:#071116; --panel-2:#050e13; --panel-3:#040b0f;
+  --line:#19333d; --line-soft:#0e1f25;
+  --ink:#FAFAFA; --ink-dim:#c2cacb; --ink-faint:#939394;
+  --navy:#0A364C; --blue:#00AEE5; --cyan:#06DCF2; --teal:#00D1AC; --teal-depth:#0D515F;
+  /* Colorblind-safe process-state palette (mirrors src/config/stateColors.js):
+     CIP→amber off the green–blue axis; Idle/Shutdown split by lightness. */
+  --c-process:#2DD4BF; --c-cip:#F59E0B; --c-idle:#CBD5E1; --c-shutdown:#475569;
+  --c-cold:#06DCF2; --c-warm:#ef8a5a;
+  --good:#00D1AC; --warn:#f2a43a; --bad:#FB7185;
+  --radius:15px; --shadow:0 12px 32px -16px rgba(0,0,0,.85);
   --sb:248px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -22,8 +25,8 @@ html,body,#root{height:100%}
 body{
   font-family:"IBM Plex Sans",sans-serif;color:var(--ink);
   background:
-    radial-gradient(1000px 600px at 80% -10%, rgba(43,182,179,.08), transparent 60%),
-    radial-gradient(900px 600px at 0% 0%, rgba(47,134,216,.08), transparent 55%),
+    radial-gradient(1000px 600px at 80% -10%, rgba(6,220,242,.07), transparent 60%),
+    radial-gradient(900px 600px at 0% 0%, rgba(0,174,229,.08), transparent 55%),
     linear-gradient(180deg,var(--bg-1),var(--bg-0));
   background-attachment:fixed; -webkit-font-smoothing:antialiased;
 }
@@ -33,7 +36,7 @@ body{
 
 /* ============ SIDEBAR ============ */
 .sidebar{
-  background:linear-gradient(180deg,#0a1a36,#081326);
+  background:linear-gradient(180deg,#071116,#03090e);
   border-right:1px solid var(--line); padding:20px 14px; display:flex; flex-direction:column; gap:6px;
   position:sticky; top:0; height:100vh;
 }
@@ -41,8 +44,8 @@ body{
 .sb-brand img{height:38px;width:auto;flex:0 0 auto;object-fit:contain}
 .sb-brand svg{width:38px;height:38px;flex:0 0 auto}
 .sb-brand .wm{font-family:"IBM Plex Sans",sans-serif;font-weight:700;font-size:21px;line-height:1;letter-spacing:-.01em}
-.sb-brand .wm .d{color:#ffffff}
-.sb-brand .wm .v{background:linear-gradient(90deg,#36c8f7 0%,#2fd9bf 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sb-brand .wm .d{color:#FAFAFA}
+.sb-brand .wm .v{background:linear-gradient(90deg,#00AEE5 0%,#00D1AC 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
 .sb-brand .tg{font-size:8px;letter-spacing:.2em;color:#7d92b0;text-transform:uppercase;margin-top:3px;font-weight:500}
 .sb-sect{font-size:9.5px;letter-spacing:.2em;color:var(--ink-faint);text-transform:uppercase;padding:14px 10px 6px;font-weight:600}
 .navitem{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:10px;color:var(--ink-dim);
@@ -50,20 +53,22 @@ body{
   text-decoration:none;width:100%;text-align:left;background:transparent}
 .navitem svg{width:18px;height:18px;flex:0 0 auto;opacity:.85}
 .navitem:hover{background:rgba(255,255,255,.04);color:var(--ink)}
-.navitem.on{background:linear-gradient(135deg,rgba(28,78,138,.5),rgba(47,134,216,.18));color:#fff;border-color:var(--line)}
-.navitem.on::before{content:"";position:absolute;left:0;top:9px;bottom:9px;width:3px;border-radius:3px;background:var(--teal)}
+.navitem.on{background:linear-gradient(135deg,rgba(10,54,76,.7),rgba(0,174,229,.16));color:#fff;border-color:var(--line)}
+.navitem.on::before{content:"";position:absolute;left:0;top:9px;bottom:9px;width:3px;border-radius:3px;background:var(--cyan)}
 .navitem .dot{margin-left:auto;width:7px;height:7px;border-radius:50%}
 .sb-foot{margin-top:auto;border-top:1px solid var(--line-soft);padding-top:12px}
 .sitepick{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid var(--line-soft);cursor:pointer}
-.sitepick .ico{width:30px;height:30px;border-radius:8px;background:rgba(43,182,179,.16);display:grid;place-items:center;color:var(--teal)}
+.sitepick .ico{width:30px;height:30px;border-radius:8px;background:rgba(0,209,172,.16);display:grid;place-items:center;color:var(--teal)}
 .sitepick .nm{font-size:12.5px;font-weight:600}
 .sitepick .lc{font-size:11px;color:var(--ink-faint)}
+.sb-credit{font-size:10px;color:var(--ink-faint);text-align:center;margin-top:11px;letter-spacing:.02em;line-height:1.5}
+.sb-credit span{color:var(--ink-dim);font-weight:600}
 
 /* ============ MAIN ============ */
 .main{display:flex;flex-direction:column;min-width:0}
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:18px;
   padding:16px clamp(16px,2.4vw,30px);border-bottom:1px solid var(--line-soft);
-  background:linear-gradient(180deg,rgba(14,33,64,.5),transparent);position:sticky;top:0;z-index:5;backdrop-filter:blur(8px)}
+  background:linear-gradient(180deg,rgba(7,17,22,.6),transparent);position:sticky;top:0;z-index:5;backdrop-filter:blur(8px)}
 .crumb{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--ink-faint)}
 .crumb .cur{color:#fff;font-weight:600;font-size:16px}
 .crumb .sep{opacity:.5}
@@ -73,23 +78,59 @@ body{
 .clock{text-align:right}
 .clock .l{font-size:9.5px;letter-spacing:.2em;color:var(--ink-faint);text-transform:uppercase}
 .clock .t{font-size:18px;font-weight:600}
-.pill{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:rgba(39,194,129,.08);font-size:12px;color:#bdf0d6}
-.live-dot{width:8px;height:8px;border-radius:50%;background:var(--c-process);box-shadow:0 0 0 0 rgba(39,194,129,.6);animation:pulse 2s infinite}
-@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(39,194,129,.5)}70%{box-shadow:0 0 0 9px rgba(39,194,129,0)}100%{box-shadow:0 0 0 0 rgba(39,194,129,0)}}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:rgba(0,209,172,.08);font-size:12px;color:#7fe9d6}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);box-shadow:0 0 0 0 rgba(6,220,242,.6);animation:pulse 2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(6,220,242,.5)}70%{box-shadow:0 0 0 9px rgba(6,220,242,0)}100%{box-shadow:0 0 0 0 rgba(6,220,242,0)}}
 .iconbtn{width:36px;height:36px;border-radius:10px;border:1px solid var(--line-soft);background:rgba(255,255,255,.03);color:var(--ink-dim);display:grid;place-items:center;cursor:pointer;transition:.18s}
-.iconbtn:hover{color:#fff;border-color:var(--blue);background:rgba(47,134,216,.12)}
+.iconbtn:hover{color:#fff;border-color:var(--blue);background:rgba(0,174,229,.12)}
 .iconbtn.spin svg{animation:spin .9s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* tabs */
-.tabs{display:flex;gap:4px;padding:0 clamp(16px,2.4vw,30px);border-bottom:1px solid var(--line-soft);background:rgba(8,16,32,.4)}
+.tabs{display:flex;gap:4px;padding:0 clamp(16px,2.4vw,30px);border-bottom:1px solid var(--line-soft);background:rgba(3,9,14,.5)}
 .tab{border:0;background:transparent;color:var(--ink-faint);font:inherit;font-size:13.5px;font-weight:500;padding:13px 16px;cursor:pointer;border-bottom:2px solid transparent;transition:.16s;display:flex;align-items:center;gap:7px}
 .tab:hover{color:var(--ink)}
-.tab.on{color:#fff;border-bottom-color:var(--teal)}
+.tab.on{color:#fff;border-bottom-color:var(--cyan)}
 .tab .badge{font-size:10px;background:var(--bad);color:#fff;border-radius:999px;padding:1px 7px;font-weight:700}
 
 .scroll{padding:22px clamp(16px,2.4vw,30px) 40px;overflow:auto}
 .page{animation:fade .35s ease}
+
+/* ---- Live tab: fill the viewport so panels grow into the empty space ----
+ * .main is the flex column (topbar + content). .scroll.live becomes a flex
+ * column that fills remaining height; the telemetry panel sits at its natural
+ * height and the timeline panel flexes to absorb the rest. */
+.main{min-height:100vh}
+/* .live and .fill both turn .scroll into a viewport-filling flex column; .live
+ * centers its grow-body (telemetry timeline), .fill lets the grow-body stretch
+ * from the top (used by the Trend tabs so the chart grows/shrinks with height). */
+.scroll.live,.scroll.fill{display:flex;flex-direction:column;gap:15px;min-height:calc(100vh - 120px)}
+.scroll.live .panel.grow,.scroll.fill .panel.grow{flex:1 1 auto;display:flex;flex-direction:column;min-height:0}
+.scroll.live .panel.grow > .grow-body{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;min-height:0}
+.scroll.fill .panel.grow > .grow-body{flex:1 1 auto;display:flex;flex-direction:column;min-height:0}
+
+/* ---- Plant Overview: fill the viewport without stranding empty space ----
+ * The page is a flex column. The KPI row and the Assets row both sit at their
+ * natural height (fixed-size cards — growing them just strands a void in the
+ * middle of each tile), and the cost chart is the ONLY panel that grows, so it
+ * expands and contracts with the window while the cards stay a clean, constant
+ * size. Desktop only — below the sidebar breakpoint everything stacks in
+ * natural document flow and scrolls. */
+@media (min-width:1101px){
+  .scroll.fleetview{display:flex;flex-direction:column;gap:15px;min-height:calc(100vh - 64px)}
+  .scroll.fleetview .panel.grow{flex:1 1 0;display:flex;flex-direction:column;min-height:0}
+  .scroll.fleetview .panel.grow > .grow-body{flex:1 1 auto;min-height:0}
+  /* Chart grows to fill, but keeps a floor so it never collapses to nothing on
+   * short windows — the page scrolls instead. */
+  .scroll.fleetview .panel.grow > .chartwrap{display:flex;flex-direction:column;min-height:220px}
+  .scroll.fleetview .panel.grow > .chartwrap svg{flex:1 1 auto;min-height:0}
+}
+
+/* Telemetry mini-cards: flex evenly across the full width, no clipping.
+ * 7 cards wrap gracefully on narrow widths instead of overflowing. */
+.telemrow{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:12px}
+@media (max-width:1500px){.telemrow{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (max-width:900px){.telemrow{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
 /* generic panels/cards */
@@ -114,7 +155,7 @@ body{
 .panel{background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line-soft);border-radius:var(--radius);padding:19px 21px;box-shadow:var(--shadow)}
 .panel h3{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
 .panel .sub{font-size:11px;color:var(--ink-faint);margin:3px 0 16px}
-.tag-new{font-size:9px;color:var(--teal);border:1px solid var(--line);padding:2px 7px;border-radius:6px;letter-spacing:.1em;font-weight:600}
+.tag-new{font-size:9px;color:var(--cyan);border:1px solid var(--line);padding:2px 7px;border-radius:6px;letter-spacing:.1em;font-weight:600}
 .legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:14px;font-size:12px;color:var(--ink-dim)}
 .legend span{display:inline-flex;align-items:center;gap:6px}.legend i{width:9px;height:9px;border-radius:3px}.legend b{color:#fff;font-weight:600}
 
@@ -146,7 +187,7 @@ body{
 .asset .m .mv{font-family:"IBM Plex Mono";font-size:17px;font-weight:600;margin-top:3px}
 .asset .go{font-size:12px;color:var(--blue);margin-top:12px;display:inline-flex;align-items:center;gap:5px;font-weight:600}
 
-/* alarms table */
+/* data table (severity / status chips) */
 .dv-table{width:100%;border-collapse:collapse;font-size:13px}
 .dv-table th{text-align:left;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);font-weight:600;padding:10px 12px;border-bottom:1px solid var(--line)}
 .dv-table td{padding:13px 12px;border-bottom:1px solid var(--line-soft);color:var(--ink-dim)}
@@ -154,7 +195,7 @@ body{
 .sev{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:6px;letter-spacing:.04em}
 .sev.crit{background:rgba(239,106,106,.16);color:#f7a3a3}
 .sev.warn{background:rgba(242,164,58,.16);color:#f6c179}
-.sev.info{background:rgba(47,134,216,.16);color:#9cc6f4}
+.sev.info{background:rgba(0,174,229,.16);color:#6fd2f4}
 .st-tag{font-size:11px;font-weight:600}.st-tag.active{color:var(--bad)}.st-tag.ack{color:var(--warn)}.st-tag.cleared{color:var(--good)}
 
 .placeholder{text-align:center;padding:70px 20px;color:var(--ink-faint)}
@@ -164,6 +205,9 @@ body{
 .winsel{display:inline-flex;gap:3px;background:var(--panel-2);border:1px solid var(--line-soft);border-radius:10px;padding:3px}
 .winsel button{border:0;background:transparent;color:var(--ink-faint);font:inherit;font-size:12.5px;font-weight:600;padding:6px 14px;border-radius:7px;cursor:pointer;transition:.15s}
 .winsel button.on{background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff}
+
+/* sparkline inside KPI cards (cost trend) */
+.spark{position:absolute;right:0;bottom:0;width:120px;height:44px;opacity:.55;pointer-events:none}
 
 @media (max-width:1100px){
   .dv-app{grid-template-columns:1fr}.sidebar{display:none}

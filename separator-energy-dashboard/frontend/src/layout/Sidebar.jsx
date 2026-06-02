@@ -1,6 +1,6 @@
 // Sidebar — matches the mockup .sidebar exactly: brand lockup (real logo mark
-// + two-tone DriftView wordmark + tagline), Monitoring section (Fleet + the
-// registry assets), Operations section (Alarms / Reports / Settings), and the
+// + two-tone DriftView wordmark + tagline), Monitoring section (Plant Overview +
+// the registry assets), Operations section (Reports / Settings), and the
 // pinned site picker. Nav items are React Router NavLinks using the mockup's
 // .navitem / .navitem.on active styling.
 import { NavLink } from "react-router-dom"
@@ -32,7 +32,7 @@ export default function Sidebar() {
           <rect x="3" y="14" width="7" height="7" rx="1" />
           <rect x="14" y="14" width="7" height="7" rx="1" />
         </svg>
-        Fleet Overview
+        Plant Overview
       </NavLink>
 
       {ASSETS.map((asset) => {
@@ -47,14 +47,6 @@ export default function Sidebar() {
       })}
 
       <div className="sb-sect">Operations</div>
-
-      <NavLink to="/alarms" className={navClass}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-          <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-          <path d="M13.7 21a2 2 0 0 1-3.4 0" />
-        </svg>
-        Alarms <span className="dot" style={{ background: "var(--bad)" }} />
-      </NavLink>
 
       <NavLink to="/reports" className={navClass}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -83,6 +75,9 @@ export default function Sidebar() {
             <div className="nm">Driftwood Dairy</div>
             <div className="lc">El Monte, CA · 1 site</div>
           </div>
+        </div>
+        <div className="sb-credit">
+          Built by Randy Lesovsky · <span>Texas Automation Systems</span>
         </div>
       </div>
     </aside>

@@ -4,13 +4,7 @@ import { formatCurrency } from "../utils/formatters"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import InfoTooltip from "./InfoTooltip"
 import dayjs from "dayjs"
-
-const STATE_COLORS = {
-  Processing: "#22c55e",
-  CIP: "#3b82f6",
-  Idle: "#f59e0b",
-  Shutdown: "#6b7280",
-}
+import { STATE_COLORS } from "../config/stateColors"
 const STATE_ORDER = ["Processing", "CIP", "Idle", "Shutdown"]
 
 function Skeleton() {
@@ -69,7 +63,7 @@ export default function CostByDayChart({ refreshKey, days = 7 }) {
           ]}
         />
       </div>
-      <div className="h-72">
+      <div className="h-96">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
             <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />

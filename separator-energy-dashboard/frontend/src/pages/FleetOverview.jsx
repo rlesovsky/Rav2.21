@@ -1,4 +1,4 @@
-// FleetOverview — mockup #page-fleet. The Separator tile is wired to REAL data
+// FleetOverview — Plant Overview (mockup #page-fleet). The Separator tile is wired to REAL data
 // (7-day summary for cost + processing %, live current for kW + state). Glycol
 // and Pasteurizer have no real source yet, so their tiles use the mockup's
 // static demo values and carry a DEMO marker — we never present fabricated
@@ -10,13 +10,7 @@ import { useLiveCurrent } from "../hooks/useLiveCurrent"
 import { useRefreshKey } from "../layout/RefreshContext"
 import { ASSETS } from "../config/assetRegistry"
 import { formatCurrency, formatNumber } from "../utils/formatters"
-
-const STATE_TINT = {
-  Processing: { bg: "rgba(39,194,129,.14)", fg: "#5fdca6", dot: "var(--c-process)" },
-  CIP: { bg: "rgba(47,134,216,.14)", fg: "#9cc6f4", dot: "var(--c-cip)" },
-  Idle: { bg: "rgba(242,164,58,.14)", fg: "#f6c179", dot: "var(--c-idle)" },
-  Shutdown: { bg: "rgba(91,113,147,.18)", fg: "#9fb4d2", dot: "var(--c-shutdown)" },
-}
+import { STATE_TINT } from "../config/stateColors"
 
 // Demo metrics for the not-yet-wired assets (verbatim from the mockup).
 const DEMO_TILES = {
@@ -33,7 +27,7 @@ const DEMO_TILES = {
   pasteurizer: {
     locator: "HTST line",
     statusLabel: "Idle",
-    tint: { bg: "rgba(242,164,58,.14)", fg: "#f6c179", dot: "var(--c-idle)" },
+    tint: STATE_TINT.Idle,
     metrics: [
       { label: "Hold °F", value: "161.2", color: "#f6c179" },
       { label: "Flow gpm", value: "0.0" },
@@ -129,8 +123,8 @@ export default function FleetOverview() {
   const sepKwh = summary?.total_kwh
 
   return (
-    <div className="scroll">
-      <div className="row k4 mb">
+    <div className="scroll fleetview">
+      <div className="row k3">
         <div className="card">
           <div className="ct">
             <span className="badge-i" style={{ background: "rgba(43,182,179,.14)" }}>
@@ -163,19 +157,9 @@ export default function FleetOverview() {
           <div className="kv" style={{ color: "#5fdca6" }}>1<small>/ 3 live</small></div>
           <div className="delta good"><span>●</span><span className="v">Separator live</span><span className="x">· 2 demo</span></div>
         </div>
-        <div className="card">
-          <div className="ct">
-            <span className="badge-i" style={{ background: "rgba(239,106,106,.13)" }}>
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#ef6a6a" strokeWidth="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" /></svg>
-            </span>
-          </div>
-          <div className="kl">Active Alarms</div>
-          <div className="kv" style={{ color: "#9fb4d2" }}>—</div>
-          <div className="delta"><span className="x">No alarm source connected</span></div>
-        </div>
       </div>
 
-      <div className="panel mb">
+      <div className="panel">
         <h3>Assets</h3>
         <div className="sub">Live status across the Driftwood Dairy process line — click any asset to drill in</div>
         <div className="row fleet" style={{ marginTop: 4 }}>
@@ -195,10 +179,11 @@ export default function FleetOverview() {
         </div>
       </div>
 
-      <div className="panel">
+      <div className="panel grow">
         <h3>Site energy cost — last 7 days <span className="tag-new">DEMO ROLL-UP</span></h3>
         <div className="sub">Stacked by asset — preview layout; only Separator (green) reflects real data</div>
-        <svg viewBox="0 0 980 240" width="100%" height="240" style={{ marginTop: 6 }}>
+        <div className="grow-body chartwrap">
+        <svg viewBox="0 0 980 240" width="100%" height="100%" preserveAspectRatio="none" style={{ marginTop: 6 }}>
           <g stroke="#16294a" strokeWidth="1">
             <line x1="48" y1="20" x2="980" y2="20" /><line x1="48" y1="72" x2="980" y2="72" />
             <line x1="48" y1="124" x2="980" y2="124" /><line x1="48" y1="176" x2="980" y2="176" />
@@ -223,6 +208,7 @@ export default function FleetOverview() {
             <text x="841" y="226">May 28</text>
           </g>
         </svg>
+        </div>
         <div className="legend">
           <span><i style={{ background: "#27c281" }} />Separator</span>
           <span><i style={{ background: "#3fb6e8" }} />Glycol Chiller</span>

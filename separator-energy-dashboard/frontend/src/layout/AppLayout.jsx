@@ -11,13 +11,12 @@ import { clearCache } from "../api/energyApi"
 import { ASSETS } from "../config/assetRegistry"
 
 function titleForPath(pathname) {
-  if (pathname === "/") return "Fleet Overview"
-  if (pathname.startsWith("/alarms")) return "Alarms"
+  if (pathname === "/") return "Plant Overview"
   if (pathname.startsWith("/reports")) return "Reports"
   if (pathname.startsWith("/settings")) return "Settings"
   const asset = ASSETS.find((a) => pathname.startsWith(a.route))
   if (asset) return asset.name
-  return "Fleet Overview"
+  return "Plant Overview"
 }
 
 export default function AppLayout() {
