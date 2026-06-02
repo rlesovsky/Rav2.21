@@ -101,14 +101,18 @@ export default function SeparatorPage() {
           </button>
         ))}
       </div>
-      <div className={active === "live" ? "scroll live" : "scroll"}>
+      <div className={active === "live" ? "scroll live" : active === "trends" ? "scroll fill" : "scroll"}>
         {active === "live" && <LiveTab refreshKey={refreshKey} />}
         {active === "analysis" && <AnalysisTab refreshKey={refreshKey} />}
         {active === "trends" && (
-          <div className="panel">
+          /* grow: the panel fills the viewport and the chart card flexes into
+             it, so the 24h trend expands/contracts with the window height. */
+          <div className="panel grow">
             <h3>Motor power trend · 24 h</h3>
             <div className="sub">kW per minute, derived from motor amps</div>
-            <EnergyTrendChart refreshKey={refreshKey} />
+            <div className="grow-body">
+              <EnergyTrendChart refreshKey={refreshKey} className="flex-1" />
+            </div>
           </div>
         )}
       </div>

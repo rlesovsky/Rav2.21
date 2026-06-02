@@ -4,6 +4,7 @@
 import { formatCurrency, formatNumber, formatRate } from "../utils/formatters"
 import { Activity, Bolt, DollarSign, Sun, Zap, Users, Gauge } from "lucide-react"
 import { useRelativeTime } from "../hooks/useLiveCurrent"
+import { STATE_TINT } from "../config/stateColors"
 
 const TINT = {
   cyan:   { bg: "rgba(34, 211, 238, 0.10)",  fg: "#22d3ee" },
@@ -12,13 +13,6 @@ const TINT = {
   green:  { bg: "rgba(34, 197, 94, 0.10)",   fg: "#22c55e" },
   blue:   { bg: "rgba(59, 130, 246, 0.10)",  fg: "#3b82f6" },
   gray:   { bg: "rgba(156, 163, 175, 0.10)", fg: "#9ca3af" },
-}
-
-const STATE_COLORS = {
-  Processing: "#00D1AC",
-  CIP: "#00AEE5",
-  Idle: "#939394",
-  Shutdown: "#53565A",
 }
 
 function MiniCard({ label, value, unit, icon: Icon, tint, accent, subtitle }) {
@@ -59,11 +53,9 @@ export default function LiveKPIs({ current, lastFetch, error }) {
   }
 
   const stateName = current?.state ?? "—"
-  const stateColor = STATE_COLORS[stateName] ?? "#53565A"
-  const stateTint = {
-    bg: `${stateColor}1a`,  // 10% opacity tint
-    fg: stateColor,
-  }
+  // Shared colorblind-safe palette; its tints carry legible foregrounds (the
+  // dark Shutdown slate would be unreadable as text if used raw).
+  const stateTint = STATE_TINT[stateName] ?? STATE_TINT.Shutdown
   const isStale = current?.is_stale === true
 
   const amps = current?.amps != null ? formatNumber(current.amps) : "—"

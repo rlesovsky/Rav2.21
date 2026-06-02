@@ -12,9 +12,11 @@
   --line:#19333d; --line-soft:#0e1f25;
   --ink:#FAFAFA; --ink-dim:#c2cacb; --ink-faint:#939394;
   --navy:#0A364C; --blue:#00AEE5; --cyan:#06DCF2; --teal:#00D1AC; --teal-depth:#0D515F;
-  --c-process:#00D1AC; --c-cip:#00AEE5; --c-idle:#939394; --c-shutdown:#53565A;
+  /* Colorblind-safe process-state palette (mirrors src/config/stateColors.js):
+     CIP→amber off the green–blue axis; Idle/Shutdown split by lightness. */
+  --c-process:#2DD4BF; --c-cip:#F59E0B; --c-idle:#CBD5E1; --c-shutdown:#475569;
   --c-cold:#06DCF2; --c-warm:#ef8a5a;
-  --good:#00D1AC; --warn:#f2a43a; --bad:#ef6a6a;
+  --good:#00D1AC; --warn:#f2a43a; --bad:#FB7185;
   --radius:15px; --shadow:0 12px 32px -16px rgba(0,0,0,.85);
   --sb:248px;
 }
@@ -99,9 +101,13 @@ body{
  * column that fills remaining height; the telemetry panel sits at its natural
  * height and the timeline panel flexes to absorb the rest. */
 .main{min-height:100vh}
-.scroll.live{display:flex;flex-direction:column;gap:15px;min-height:calc(100vh - 120px)}
-.scroll.live .panel.grow{flex:1 1 auto;display:flex;flex-direction:column;min-height:0}
+/* .live and .fill both turn .scroll into a viewport-filling flex column; .live
+ * centers its grow-body (telemetry timeline), .fill lets the grow-body stretch
+ * from the top (used by the Trend tabs so the chart grows/shrinks with height). */
+.scroll.live,.scroll.fill{display:flex;flex-direction:column;gap:15px;min-height:calc(100vh - 120px)}
+.scroll.live .panel.grow,.scroll.fill .panel.grow{flex:1 1 auto;display:flex;flex-direction:column;min-height:0}
 .scroll.live .panel.grow > .grow-body{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;min-height:0}
+.scroll.fill .panel.grow > .grow-body{flex:1 1 auto;display:flex;flex-direction:column;min-height:0}
 
 /* ---- Plant Overview: same fill-the-viewport treatment ----
  * The page is a flex column; the KPI row sits at its natural height while the

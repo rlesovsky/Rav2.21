@@ -3,13 +3,7 @@ import { fetchSummary } from "../api/energyApi"
 import { formatCurrency, formatPercent } from "../utils/formatters"
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts"
 import InfoTooltip from "./InfoTooltip"
-
-const STATE_COLORS = {
-  Processing: "#00D1AC",
-  CIP: "#00AEE5",
-  Idle: "#939394",
-  Shutdown: "#53565A",
-}
+import { STATE_COLORS } from "../config/stateColors"
 const STATE_ORDER = ["Processing", "CIP", "Idle", "Shutdown"]
 
 function Skeleton() {

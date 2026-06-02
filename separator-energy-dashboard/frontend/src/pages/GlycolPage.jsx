@@ -206,7 +206,7 @@ export default function GlycolPage() {
           </button>
         ))}
       </div>
-      <div className="scroll">
+      <div className={active === "trends" ? "scroll fill" : "scroll"}>
         <DemoBanner />
 
         {active === "live" && (
@@ -302,10 +302,16 @@ export default function GlycolPage() {
         )}
 
         {active === "trends" && (
-          <div className="panel">
+          /* grow: panel fills the viewport; the chart flexes into it so the
+             live trend expands/contracts with the window height. The
+             relative+absolute wrapper gives ResponsiveContainer a measurable
+             box inside the nested flex column. */
+          <div className="panel grow">
             <h3>Supply temperature &amp; pressure · live trend</h3>
             <div className="sub">Same series, full height — 30-sample rolling window @ 1.8s</div>
-            <div style={{ height: 360, marginTop: 8 }}>
+            <div className="grow-body" style={{ marginTop: 8 }}>
+              <div style={{ position: "relative", flex: "1 1 auto", minHeight: 0 }}>
+                <div style={{ position: "absolute", inset: 0 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={series} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
                   <CartesianGrid stroke="var(--line)" strokeDasharray="2 4" />
@@ -320,6 +326,8 @@ export default function GlycolPage() {
                   <Line yAxisId="p" type="monotone" dataKey="press" name="PSI" stroke="#00AEE5" dot={false} strokeWidth={1.5} strokeOpacity={0.7} isAnimationActive={false} />
                 </LineChart>
               </ResponsiveContainer>
+                </div>
+              </div>
             </div>
           </div>
         )}

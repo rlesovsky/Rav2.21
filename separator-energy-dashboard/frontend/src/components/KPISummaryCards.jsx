@@ -11,7 +11,7 @@ const TINT = {
   purple: { bg: "rgba(167, 139, 250, 0.10)", fg: "#a78bfa" },
   amber:  { bg: "rgba(245, 158, 11, 0.10)",  fg: "#f59e0b" },
   green:  { bg: "rgba(34, 197, 94, 0.10)",   fg: "#22c55e" },
-  red:    { bg: "rgba(239, 68, 68, 0.10)",   fg: "#ef4444" },
+  red:    { bg: "rgba(251, 113, 133, 0.12)", fg: "#FB7185" },  // rose — stays visible on dark under protanopia
 }
 
 function CardSkeleton() {

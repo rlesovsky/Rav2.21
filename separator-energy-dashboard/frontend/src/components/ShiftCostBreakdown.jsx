@@ -3,13 +3,7 @@ import { fetchSummary } from "../api/energyApi"
 import { formatCurrency } from "../utils/formatters"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import InfoTooltip from "./InfoTooltip"
-
-const STATE_COLORS = {
-  Processing: "#00D1AC",
-  CIP: "#00AEE5",
-  Idle: "#939394",
-  Shutdown: "#53565A",
-}
+import { STATE_COLORS } from "../config/stateColors"
 const STATE_ORDER = ["Processing", "CIP", "Idle", "Shutdown"]
 const SHIFTS = ["1st Shift", "2nd Shift", "3rd Shift"]
 

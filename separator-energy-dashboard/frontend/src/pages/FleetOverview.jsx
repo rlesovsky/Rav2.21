@@ -10,13 +10,7 @@ import { useLiveCurrent } from "../hooks/useLiveCurrent"
 import { useRefreshKey } from "../layout/RefreshContext"
 import { ASSETS } from "../config/assetRegistry"
 import { formatCurrency, formatNumber } from "../utils/formatters"
-
-const STATE_TINT = {
-  Processing: { bg: "rgba(39,194,129,.14)", fg: "#5fdca6", dot: "var(--c-process)" },
-  CIP: { bg: "rgba(47,134,216,.14)", fg: "#9cc6f4", dot: "var(--c-cip)" },
-  Idle: { bg: "rgba(242,164,58,.14)", fg: "#f6c179", dot: "var(--c-idle)" },
-  Shutdown: { bg: "rgba(91,113,147,.18)", fg: "#9fb4d2", dot: "var(--c-shutdown)" },
-}
+import { STATE_TINT } from "../config/stateColors"
 
 // Demo metrics for the not-yet-wired assets (verbatim from the mockup).
 const DEMO_TILES = {
@@ -33,7 +27,7 @@ const DEMO_TILES = {
   pasteurizer: {
     locator: "HTST line",
     statusLabel: "Idle",
-    tint: { bg: "rgba(242,164,58,.14)", fg: "#f6c179", dot: "var(--c-idle)" },
+    tint: STATE_TINT.Idle,
     metrics: [
       { label: "Hold °F", value: "161.2", color: "#f6c179" },
       { label: "Flow gpm", value: "0.0" },
