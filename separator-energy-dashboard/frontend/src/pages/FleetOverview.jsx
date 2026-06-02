@@ -159,10 +159,10 @@ export default function FleetOverview() {
         </div>
       </div>
 
-      <div className="panel grow">
+      <div className="panel">
         <h3>Assets</h3>
         <div className="sub">Live status across the Driftwood Dairy process line — click any asset to drill in</div>
-        <div className="row fleet grow-body" style={{ marginTop: 4 }}>
+        <div className="row fleet" style={{ marginTop: 4 }}>
           {ASSETS.map((asset) => {
             if (asset.real) return <SeparatorTile key={asset.id} asset={asset} onOpen={onOpen} />
             const demo = DEMO_TILES[asset.id]
@@ -179,7 +179,7 @@ export default function FleetOverview() {
         </div>
       </div>
 
-      <div className="panel grow grow-lg">
+      <div className="panel grow">
         <h3>Site energy cost — last 7 days <span className="tag-new">DEMO ROLL-UP</span></h3>
         <div className="sub">Stacked by asset — preview layout; only Separator (green) reflects real data</div>
         <div className="grow-body chartwrap">
