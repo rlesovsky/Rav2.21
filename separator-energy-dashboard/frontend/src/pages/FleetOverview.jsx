@@ -129,8 +129,8 @@ export default function FleetOverview() {
   const sepKwh = summary?.total_kwh
 
   return (
-    <div className="scroll">
-      <div className="row k3 mb">
+    <div className="scroll fleetview">
+      <div className="row k3">
         <div className="card">
           <div className="ct">
             <span className="badge-i" style={{ background: "rgba(43,182,179,.14)" }}>
@@ -165,10 +165,10 @@ export default function FleetOverview() {
         </div>
       </div>
 
-      <div className="panel mb">
+      <div className="panel grow">
         <h3>Assets</h3>
         <div className="sub">Live status across the Driftwood Dairy process line — click any asset to drill in</div>
-        <div className="row fleet" style={{ marginTop: 4 }}>
+        <div className="row fleet grow-body" style={{ marginTop: 4 }}>
           {ASSETS.map((asset) => {
             if (asset.real) return <SeparatorTile key={asset.id} asset={asset} onOpen={onOpen} />
             const demo = DEMO_TILES[asset.id]
@@ -185,10 +185,11 @@ export default function FleetOverview() {
         </div>
       </div>
 
-      <div className="panel">
+      <div className="panel grow grow-lg">
         <h3>Site energy cost — last 7 days <span className="tag-new">DEMO ROLL-UP</span></h3>
         <div className="sub">Stacked by asset — preview layout; only Separator (green) reflects real data</div>
-        <svg viewBox="0 0 980 240" width="100%" height="240" style={{ marginTop: 6 }}>
+        <div className="grow-body chartwrap">
+        <svg viewBox="0 0 980 240" width="100%" height="100%" preserveAspectRatio="none" style={{ marginTop: 6 }}>
           <g stroke="#16294a" strokeWidth="1">
             <line x1="48" y1="20" x2="980" y2="20" /><line x1="48" y1="72" x2="980" y2="72" />
             <line x1="48" y1="124" x2="980" y2="124" /><line x1="48" y1="176" x2="980" y2="176" />
@@ -213,6 +214,7 @@ export default function FleetOverview() {
             <text x="841" y="226">May 28</text>
           </g>
         </svg>
+        </div>
         <div className="legend">
           <span><i style={{ background: "#27c281" }} />Separator</span>
           <span><i style={{ background: "#3fb6e8" }} />Glycol Chiller</span>

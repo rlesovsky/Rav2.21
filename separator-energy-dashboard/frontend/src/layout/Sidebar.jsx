@@ -76,6 +76,9 @@ export default function Sidebar() {
             <div className="lc">El Monte, CA · 1 site</div>
           </div>
         </div>
+        <div className="sb-credit">
+          Built by Randy Lesovsky · <span>Texas Automation Systems</span>
+        </div>
       </div>
     </aside>
   )

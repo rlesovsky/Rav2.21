@@ -59,6 +59,8 @@ body{
 .sitepick .ico{width:30px;height:30px;border-radius:8px;background:rgba(0,209,172,.16);display:grid;place-items:center;color:var(--teal)}
 .sitepick .nm{font-size:12.5px;font-weight:600}
 .sitepick .lc{font-size:11px;color:var(--ink-faint)}
+.sb-credit{font-size:10px;color:var(--ink-faint);text-align:center;margin-top:11px;letter-spacing:.02em;line-height:1.5}
+.sb-credit span{color:var(--ink-dim);font-weight:600}
 
 /* ============ MAIN ============ */
 .main{display:flex;flex-direction:column;min-width:0}
@@ -100,6 +102,27 @@ body{
 .scroll.live{display:flex;flex-direction:column;gap:15px;min-height:calc(100vh - 120px)}
 .scroll.live .panel.grow{flex:1 1 auto;display:flex;flex-direction:column;min-height:0}
 .scroll.live .panel.grow > .grow-body{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;min-height:0}
+
+/* ---- Plant Overview: same fill-the-viewport treatment ----
+ * The page is a flex column; the KPI row sits at its natural height while the
+ * Assets and chart panels grow to absorb the slack so the layout breathes
+ * instead of stranding empty space at the bottom. Desktop only — below the
+ * sidebar breakpoint the sections stack in natural document flow and scroll,
+ * so we never force flexed heights that would clip or overlap. */
+@media (min-width:1101px){
+  .scroll.fleetview{display:flex;flex-direction:column;gap:15px;min-height:calc(100vh - 64px)}
+  .scroll.fleetview .panel.grow{flex:1 1 0;display:flex;flex-direction:column;min-height:0}
+  .scroll.fleetview .panel.grow.grow-lg{flex:1.4 1 0}
+  .scroll.fleetview .panel.grow > .grow-body{flex:1 1 auto;min-height:0}
+  .scroll.fleetview .panel.grow > .grow-body.fleet{display:grid;align-items:stretch}
+  .scroll.fleetview .panel.grow > .chartwrap{display:flex;flex-direction:column}
+  .scroll.fleetview .panel.grow > .chartwrap svg{flex:1 1 auto;min-height:0}
+  /* Taller asset tiles spread their content top-to-bottom so the extra room
+   * reads as deliberate breathing space rather than a gap under the header. */
+  .scroll.fleetview .asset{display:flex;flex-direction:column}
+  .scroll.fleetview .asset .metrics{margin-top:auto}
+  .scroll.fleetview .asset .go{margin-top:14px}
+}
 
 /* Telemetry mini-cards: flex evenly across the full width, no clipping.
  * 7 cards wrap gracefully on narrow widths instead of overflowing. */
