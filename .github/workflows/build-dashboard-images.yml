@@ -3,16 +3,16 @@
 #
 # Production runs the single-image deploy (FastAPI serves both the API and
 # the React frontend on port 3030). The image name + tag in this workflow
-# matches `image: separator-dashboard:v2.25` in docker-compose.yml.
+# matches `image: separator-dashboard:v2.26` in docker-compose.yml.
 #
 # Manual run: Actions → Build dashboard images → Run workflow
-# Artifact:   separator-dashboard-v2.25.tar (~150 MB)
+# Artifact:   separator-dashboard-v2.26.tar (~150 MB)
 #
 # Deployment recipe (after this workflow finishes green):
 #   gh run download <run-id> --name separator-dashboard
-#   scp separator-dashboard-v2.25.tar user@server:/tmp/
+#   scp separator-dashboard-v2.26.tar user@server:/tmp/
 #   # On the server:
-#   docker load -i /tmp/separator-dashboard-v2.25.tar
+#   docker load -i /tmp/separator-dashboard-v2.26.tar
 #   # Then redeploy via Portainer or:
 #   #   docker compose -f docker-compose.yml up -d
 
@@ -46,7 +46,7 @@ jobs:
           file: separator-energy-dashboard/Dockerfile
           platforms: linux/amd64
           tags: |
-            separator-dashboard:v2.25
+            separator-dashboard:v2.26
             separator-dashboard:latest
           load: true                # Keep in the runner's local daemon for `docker save`
           push: false
@@ -55,21 +55,21 @@ jobs:
 
       - name: Verify image loaded into daemon
         run: |
-          docker image inspect separator-dashboard:v2.25 \
+          docker image inspect separator-dashboard:v2.26 \
             --format '{{.Id}} ({{.Architecture}}/{{.Os}}, size={{.Size}})'
 
       - name: Export to tar
         run: |
           cd separator-energy-dashboard
           # Save the image with both tags so consumers can reference either.
-          docker save -o separator-dashboard-v2.25.tar \
-            separator-dashboard:v2.25 \
+          docker save -o separator-dashboard-v2.26.tar \
+            separator-dashboard:v2.26 \
             separator-dashboard:latest
-          ls -lh separator-dashboard-v2.25.tar
+          ls -lh separator-dashboard-v2.26.tar
 
       - name: Upload tar artifact
         uses: actions/upload-artifact@v4
         with:
           name: separator-dashboard
-          path: separator-energy-dashboard/separator-dashboard-v2.25.tar
+          path: separator-energy-dashboard/separator-dashboard-v2.26.tar
           retention-days: 30
